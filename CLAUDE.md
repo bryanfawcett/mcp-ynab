@@ -20,7 +20,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `cd worker && docker build -t ynab-mcp .` — Build the container image standalone
 - `cd worker && npm install && npx wrangler deploy` — Deploy the Worker + Container to Cloudflare (builds the image via Docker as part of deploy; needs Docker running locally)
 - `cd worker && npx wrangler secret put YNAB_API_KEY` / `MCP_AUTH_TOKEN` — Set the two secrets the container needs (see README.md's "Remote deployment" section for the full setup)
-- Or connect `worker/` to this repo via **Workers & Pages → [Worker] → Settings → Builds** in the Cloudflare dashboard, with root directory `worker`, to deploy on every push instead of running `wrangler deploy` locally — see README.md.
+- Or connect `worker/` to this repo via **Workers & Pages → [Worker] → Settings → Builds** in the Cloudflare dashboard, with root directory `worker` and **production branch set to `main`**, to deploy on merge instead of running `wrangler deploy` locally — see README.md. (Without a production branch set, every push to every branch deploys to production.)
 
 ## Architecture
 
