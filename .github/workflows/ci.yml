@@ -28,3 +28,43 @@ jobs:
         with:
           python-version: "3.13"
       - run: python scripts/smoke_test.py
+
+  # Typechecks the Worker that fronts the Container (worker/src/index.ts).
+  worker-typecheck:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: worker
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: worker/package-lock.json
+      - run: npm ci
+      - run: npx tsc --noEmit
+
+  # Builds worker/Dockerfile (image_build_context points back at the repo root
+  # for its COPY paths) and boots it, the way Cloudflare's own build does when
+  # the Worker is connected via Workers Builds. Catches breakage no local dev
+  # environment without Docker can catch.
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f worker/Dockerfile -t ynab-mcp-ci .
+      - run: |
+          docker run -d --name ynab-mcp-ci -p 8080:8080 \
+            -e YNAB_API_KEY=test-dummy-key \
+            -e MCP_AUTH_TOKEN=test-dummy-token \
+            ynab-mcp-ci
+      - run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8080/health && exit 0
+            sleep 1
+          done
+          echo "container never became healthy" >&2
+          exit 1
+      - if: always()
+        run: docker logs ynab-mcp-ci
