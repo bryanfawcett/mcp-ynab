@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     cache_db_path: str = Field(default_factory=_default_db_path)
     http_timeout: float = 30.0
 
+    # Shared secret required on the Authorization header for the streamable-http
+    # transport (src/server/http.py). Unused by the stdio transport.
+    mcp_auth_token: str | None = Field(default=None, alias="MCP_AUTH_TOKEN")
+
     # TTL for non-delta endpoints (seconds)
     ttl_budgets: int = 300
     ttl_scheduled_transactions: int = 300

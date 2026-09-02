@@ -86,6 +86,60 @@ uv run python -m src.server
 
 Requires `YNAB_API_KEY` in `.env.local` for running the server.
 
+## Remote deployment (Cloudflare Container + Worker)
+
+For connecting Claude web (or any client that needs a remote MCP server rather
+than a local stdio process), `worker/` deploys the same Python server, unchanged,
+behind a Cloudflare Container and a small routing Worker, at
+`https://budget.bryanfawcett.com/mcp`.
+
+The Python server itself just gained a second transport
+(`src/server/http.py`, streamable-http instead of stdio); `Dockerfile`
+containerizes it, and `worker/` is a ~15-line Worker that forwards requests into
+that container. Nothing about the stdio/Claude Desktop setup above changes.
+
+**One-time setup:**
+
+1. Make sure `budget.bryanfawcett.com` has a proxied (orange-clouded) DNS
+   record in the `bryanfawcett.com` zone on Cloudflare — a [Route](https://developers.cloudflare.com/workers/configuration/routing/routes/)
+   (as opposed to a [Custom Domain](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/))
+   only intercepts the `/mcp*` path, so whatever else serves that subdomain
+   today keeps serving everything else. If there's no DNS record yet, add a
+   proxied placeholder (e.g. an `AAAA` record to `100::`) first.
+2. Generate a long random token for `MCP_AUTH_TOKEN` — it's the only thing
+   gating access to your YNAB data once the endpoint is public, e.g.:
+   ```bash
+   openssl rand -hex 32
+   ```
+3. From `worker/`, set both secrets on the Worker (values aren't read from
+   `wrangler.jsonc` — Cloudflare Container secrets guide:
+   <https://developers.cloudflare.com/containers/examples/env-vars-and-secrets/>):
+   ```bash
+   cd worker
+   npm install
+   npx wrangler secret put YNAB_API_KEY
+   npx wrangler secret put MCP_AUTH_TOKEN
+   ```
+4. Deploy (requires [Docker](https://docs.docker.com/get-started/get-docker/)
+   running locally — `wrangler` builds the container image as part of deploy —
+   and a Workers **Paid** plan, which Containers require):
+   ```bash
+   npx wrangler deploy
+   ```
+5. In Claude web (**Settings → Connectors → Add custom connector**), use
+   `https://budget.bryanfawcett.com/mcp?token=<MCP_AUTH_TOKEN>` as the URL —
+   as of this writing, Claude.ai's custom connector UI only has fields for
+   OAuth (Authorization/Token URL, Client ID/Secret), not a static header
+   ([anthropics/claude-ai-mcp#112](https://github.com/anthropics/claude-ai-mcp/issues/112)),
+   so the token travels as a query parameter instead. `src/server/http.py`
+   accepts either form; if you're adding this to a client that *does* support
+   custom headers (Claude Code, an MCP Inspector, etc.), prefer
+   `Authorization: Bearer <MCP_AUTH_TOKEN>` there.
+
+The container's SQLite cache lives on ephemeral disk and rebuilds itself after
+a cold start (same cache the stdio transport uses); nothing to configure
+there. See `CLAUDE.md` for the day-to-day commands.
+
 ## License
 
 [AGPL-3.0](LICENSE)

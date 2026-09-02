@@ -1,0 +1,28 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "ynab-mcp",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Builds ../Dockerfile with the repo root as build context (the Dockerfile's
+  // COPY paths — pyproject.toml, uv.lock, src/ — are relative to the root, not
+  // this worker/ directory).
+  "containers": [
+    {
+      "class_name": "YnabMcpContainer",
+      "image": "../Dockerfile",
+      "max_instances": 1
+    }
+  ],
+  "durable_objects": {
+    "bindings": [{ "class_name": "YnabMcpContainer", "name": "YNAB_MCP_CONTAINER" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["YnabMcpContainer"] }],
+
+  // Runs the MCP endpoint under the existing budget.bryanfawcett.com host,
+  // alongside whatever else serves that domain. Requires a proxied DNS record
+  // for budget.bryanfawcett.com in the bryanfawcett.com zone already — see
+  // README.md's "Remote deployment" section before running `wrangler deploy`.
+  "routes": [{ "pattern": "budget.bryanfawcett.com/mcp*", "zone_name": "bryanfawcett.com" }]
+}
