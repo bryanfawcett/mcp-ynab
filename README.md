@@ -104,20 +104,23 @@ git-integration requires the Wrangler config and Dockerfile to share a root
 directory, and this keeps both deploy paths below working from the same
 layout.)
 
+`worker/wrangler.jsonc` declares `budget.bryanfawcett.com` as a [Custom
+Domain](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/)
+rather than a path-scoped [Route](https://developers.cloudflare.com/workers/configuration/routing/routes/)
+— this Worker is meant to be the only thing on that subdomain, so Cloudflare
+manages the DNS record and certificate for it automatically; no DNS setup
+needed. (If that ever changes and something else needs to share the
+subdomain, switch to a Route scoped to `/mcp*` instead — see the comment in
+`wrangler.jsonc`.)
+
 **One-time setup:**
 
-1. Make sure `budget.bryanfawcett.com` has a proxied (orange-clouded) DNS
-   record in the `bryanfawcett.com` zone on Cloudflare — a [Route](https://developers.cloudflare.com/workers/configuration/routing/routes/)
-   (as opposed to a [Custom Domain](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/))
-   only intercepts the `/mcp*` path, so whatever else serves that subdomain
-   today keeps serving everything else. If there's no DNS record yet, add a
-   proxied placeholder (e.g. an `AAAA` record to `100::`) first.
-2. Generate a long random token for `MCP_AUTH_TOKEN` — it's the only thing
+1. Generate a long random token for `MCP_AUTH_TOKEN` — it's the only thing
    gating access to your YNAB data once the endpoint is public, e.g.:
    ```bash
    openssl rand -hex 32
    ```
-3. Requires a Workers **Paid** plan (Containers require it) and, for the
+2. Requires a Workers **Paid** plan (Containers require it) and, for the
    Docker-build step below, either [Docker](https://docs.docker.com/get-started/get-docker/)
    locally or Cloudflare's own build environment — pick one:
 
@@ -133,19 +136,23 @@ layout.)
    `wrangler deploy` builds the image via your local Docker.)
 
    **Option B — connect the repo in the Cloudflare dashboard (Workers Builds),
-   so it deploys on every push instead:**
-   1. Create a Worker named exactly `ynab-mcp` (must match `"name"` in
+   so it deploys automatically:**
+   1. Create a Worker named exactly `mcp-ynab` (must match `"name"` in
       `worker/wrangler.jsonc`, or the build fails), then go to its
       **Settings → Builds → Connect** and pick this GitHub repo.
    2. Set **Root directory** to `worker` — Cloudflare's git-integration builds
       a Dockerfile only when it's under the configured root directory, which
       is why it lives at `worker/Dockerfile` rather than the repo root.
    3. Leave **Deploy command** as the default `npx wrangler deploy`.
-   4. Under the Worker's **Settings → Variables & Secrets**, add
+   4. Set **Production branch** to `main` under **Settings → Builds**. Without
+      this, Workers Builds deploys to *production* off of every push to
+      *every* branch — including work-in-progress PR branches — rather than
+      only after a merge to `main`.
+   5. Under the Worker's **Settings → Variables & Secrets**, add
       `YNAB_API_KEY` and `MCP_AUTH_TOKEN` as secrets (same two values as
       Option A).
-   5. Push to the production branch to trigger the first build — it can take
-      several minutes while Cloudflare provisions the container image.
+   6. Push to `main` to trigger the first build — it can take several minutes
+      while Cloudflare provisions the container image.
 4. In Claude web (**Settings → Connectors → Add custom connector**), use
    `https://budget.bryanfawcett.com/mcp?token=<MCP_AUTH_TOKEN>` as the URL —
    as of this writing, Claude.ai's custom connector UI only has fields for

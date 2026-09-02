@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "ynab-mcp",
+  "name": "mcp-ynab",
   "main": "src/index.ts",
   "compatibility_date": "2026-09-01",
   "compatibility_flags": ["nodejs_compat"],
@@ -23,9 +23,12 @@
   },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["YnabMcpContainer"] }],
 
-  // Runs the MCP endpoint under the existing budget.bryanfawcett.com host,
-  // alongside whatever else serves that domain. Requires a proxied DNS record
-  // for budget.bryanfawcett.com in the bryanfawcett.com zone already — see
-  // README.md's "Remote deployment" section before running `wrangler deploy`.
-  "routes": [{ "pattern": "budget.bryanfawcett.com/mcp*", "zone_name": "bryanfawcett.com" }]
+  // budget.bryanfawcett.com is dedicated to this MCP server, so it's a Custom
+  // Domain (this Worker is the origin for the whole hostname, all paths) —
+  // Cloudflare manages the DNS record and certificate automatically. If this
+  // subdomain ever needs to serve anything besides /mcp and /health, switch
+  // this to a scoped Route instead (`{ "pattern": "budget.bryanfawcett.com/mcp*",
+  // "zone_name": "bryanfawcett.com" }`), which requires its own proxied DNS
+  // record already at that hostname.
+  "routes": [{ "pattern": "budget.bryanfawcett.com", "custom_domain": true }]
 }

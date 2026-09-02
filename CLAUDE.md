@@ -20,7 +20,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `cd worker && docker build -t ynab-mcp .` — Build the container image standalone
 - `cd worker && npm install && npx wrangler deploy` — Deploy the Worker + Container to Cloudflare (builds the image via Docker as part of deploy; needs Docker running locally)
 - `cd worker && npx wrangler secret put YNAB_API_KEY` / `MCP_AUTH_TOKEN` — Set the two secrets the container needs (see README.md's "Remote deployment" section for the full setup)
-- Or connect `worker/` to this repo via **Workers & Pages → [Worker] → Settings → Builds** in the Cloudflare dashboard, with root directory `worker`, to deploy on every push instead of running `wrangler deploy` locally — see README.md.
+- Or connect `worker/` to this repo via **Workers & Pages → [Worker] → Settings → Builds** in the Cloudflare dashboard, with root directory `worker` and **production branch set to `main`**, to deploy on merge instead of running `wrangler deploy` locally — see README.md. (Without a production branch set, every push to every branch deploys to production.)
 
 ## Architecture
 
@@ -40,7 +40,7 @@ This repo contains three things:
 
 ### Cloudflare Worker (`worker/`)
 
-A thin TypeScript Worker (`@cloudflare/containers`) that routes `budget.bryanfawcett.com/mcp*` into a Container built from `worker/Dockerfile`. It does not reimplement any server logic — the Python code is unchanged, just given an HTTP transport. The Dockerfile lives under `worker/` (not the repo root) because Cloudflare's Workers Builds git-integration requires the Wrangler config and Dockerfile to share a root directory; `image_build_context: ".."` in `wrangler.jsonc` points the actual Docker build context back at the repo root, since the Dockerfile's `COPY` paths (`pyproject.toml`, `src/`, etc.) are root-relative. See README.md's "Remote deployment" section for the one-time DNS/secrets setup.
+A thin TypeScript Worker (`@cloudflare/containers`) that forwards all of `budget.bryanfawcett.com` into a Container built from `worker/Dockerfile` (the container itself only serves `/mcp` and `/health`; anything else 404s). It does not reimplement any server logic — the Python code is unchanged, just given an HTTP transport. `budget.bryanfawcett.com` is declared as a Custom Domain in `wrangler.jsonc` (this Worker is the only thing on that subdomain), not a path-scoped Route, so Cloudflare manages the DNS record and certificate automatically. The Dockerfile lives under `worker/` (not the repo root) because Cloudflare's Workers Builds git-integration requires the Wrangler config and Dockerfile to share a root directory; `image_build_context: ".."` in `wrangler.jsonc` points the actual Docker build context back at the repo root, since the Dockerfile's `COPY` paths (`pyproject.toml`, `src/`, etc.) are root-relative. See README.md's "Remote deployment" section for the one-time secrets setup.
 
 ### Key conventions
 
