@@ -22,3 +22,7 @@ website/.astro/
 
 # Vercel
 .vercel
+
+# Wrangler (worker/)
+.wrangler/
+worker/.dev.vars

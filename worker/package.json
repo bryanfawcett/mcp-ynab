@@ -1,0 +1,18 @@
+{
+  "name": "ynab-mcp-worker",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Cloudflare Worker that routes budget.bryanfawcett.com/mcp into the mcp-ynab Container",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "@cloudflare/containers": "^0.3.7"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260902.1",
+    "typescript": "^5.7.0",
+    "wrangler": "^4.128.0"
+  }
+}
