@@ -94,9 +94,15 @@ behind a Cloudflare Container and a small routing Worker, at
 `https://budget.bryanfawcett.com/mcp`.
 
 The Python server itself just gained a second transport
-(`src/server/http.py`, streamable-http instead of stdio); `Dockerfile`
-containerizes it, and `worker/` is a ~15-line Worker that forwards requests into
-that container. Nothing about the stdio/Claude Desktop setup above changes.
+(`src/server/http.py`, streamable-http instead of stdio); `worker/Dockerfile`
+containerizes it, and `worker/src/index.ts` is a ~15-line Worker that forwards
+requests into that container. Nothing about the stdio/Claude Desktop setup
+above changes. (The Dockerfile lives under `worker/` rather than the repo
+root, with `image_build_context: ".."` in `wrangler.jsonc` pointing the actual
+build context back at the repo root — Cloudflare's Workers Builds
+git-integration requires the Wrangler config and Dockerfile to share a root
+directory, and this keeps both deploy paths below working from the same
+layout.)
 
 **One-time setup:**
 
@@ -111,22 +117,36 @@ that container. Nothing about the stdio/Claude Desktop setup above changes.
    ```bash
    openssl rand -hex 32
    ```
-3. From `worker/`, set both secrets on the Worker (values aren't read from
-   `wrangler.jsonc` — Cloudflare Container secrets guide:
-   <https://developers.cloudflare.com/containers/examples/env-vars-and-secrets/>):
+3. Requires a Workers **Paid** plan (Containers require it) and, for the
+   Docker-build step below, either [Docker](https://docs.docker.com/get-started/get-docker/)
+   locally or Cloudflare's own build environment — pick one:
+
+   **Option A — deploy from your machine:**
    ```bash
    cd worker
    npm install
    npx wrangler secret put YNAB_API_KEY
    npx wrangler secret put MCP_AUTH_TOKEN
-   ```
-4. Deploy (requires [Docker](https://docs.docker.com/get-started/get-docker/)
-   running locally — `wrangler` builds the container image as part of deploy —
-   and a Workers **Paid** plan, which Containers require):
-   ```bash
    npx wrangler deploy
    ```
-5. In Claude web (**Settings → Connectors → Add custom connector**), use
+   (Secrets aren't read from `wrangler.jsonc` — see the [Container secrets guide](https://developers.cloudflare.com/containers/examples/env-vars-and-secrets/).
+   `wrangler deploy` builds the image via your local Docker.)
+
+   **Option B — connect the repo in the Cloudflare dashboard (Workers Builds),
+   so it deploys on every push instead:**
+   1. Create a Worker named exactly `ynab-mcp` (must match `"name"` in
+      `worker/wrangler.jsonc`, or the build fails), then go to its
+      **Settings → Builds → Connect** and pick this GitHub repo.
+   2. Set **Root directory** to `worker` — Cloudflare's git-integration builds
+      a Dockerfile only when it's under the configured root directory, which
+      is why it lives at `worker/Dockerfile` rather than the repo root.
+   3. Leave **Deploy command** as the default `npx wrangler deploy`.
+   4. Under the Worker's **Settings → Variables & Secrets**, add
+      `YNAB_API_KEY` and `MCP_AUTH_TOKEN` as secrets (same two values as
+      Option A).
+   5. Push to the production branch to trigger the first build — it can take
+      several minutes while Cloudflare provisions the container image.
+4. In Claude web (**Settings → Connectors → Add custom connector**), use
    `https://budget.bryanfawcett.com/mcp?token=<MCP_AUTH_TOKEN>` as the URL —
    as of this writing, Claude.ai's custom connector UI only has fields for
    OAuth (Authorization/Token URL, Client ID/Secret), not a static header

@@ -1,0 +1,8 @@
+# Copy to worker/.dev.vars for `wrangler dev` (gitignored, never commit real values).
+# In production these are set as Worker secrets instead — see README.md's
+# "Remote deployment" section — either via `wrangler secret put` or, when the
+# Worker is connected to this repo through Workers Builds, under the Worker's
+# Settings > Variables & Secrets in the Cloudflare dashboard.
+
+YNAB_API_KEY=replace-with-your-ynab-personal-access-token
+MCP_AUTH_TOKEN=replace-with-a-long-random-token

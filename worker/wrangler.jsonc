@@ -5,13 +5,16 @@
   "compatibility_date": "2026-09-01",
   "compatibility_flags": ["nodejs_compat"],
 
-  // Builds ../Dockerfile with the repo root as build context (the Dockerfile's
-  // COPY paths — pyproject.toml, uv.lock, src/ — are relative to the root, not
-  // this worker/ directory).
+  // The Dockerfile lives inside this directory (Cloudflare's Workers Builds
+  // git-integration requires the Wrangler config and Dockerfile to both be
+  // under the configured root directory — see README.md), but its COPY paths
+  // (pyproject.toml, uv.lock, src/, README.md) are repo-root-relative, so the
+  // build context is set to the repo root via image_build_context.
   "containers": [
     {
       "class_name": "YnabMcpContainer",
-      "image": "../Dockerfile",
+      "image": "./Dockerfile",
+      "image_build_context": "..",
       "max_instances": 1
     }
   ],

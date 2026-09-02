@@ -25,3 +25,4 @@ website/.astro/
 
 # Wrangler (worker/)
 .wrangler/
+worker/.dev.vars
