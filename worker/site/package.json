@@ -6,9 +6,17 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "check:contrast": "node scripts/check-contrast.mjs",
+    "check:a11y": "node scripts/check-a11y.mjs",
+    "check": "npm run check:contrast && npm run check:a11y"
   },
   "dependencies": {
     "astro": "^6.0.5"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "apca-w3": "^0.1.9",
+    "playwright": "^1.63.0"
   }
 }

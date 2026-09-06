@@ -10,6 +10,8 @@ interface Env {
   YNAB_API_KEY?: string;
   MCP_AUTH_TOKEN?: string;
   MCP_MULTI_TENANT?: string;
+  MCP_RATE_LIMITER: RateLimit;
+  CF_VERSION_METADATA: WorkerVersionMetadata;
 }
 
 export class YnabMcpContainer extends Container<Env> {
@@ -50,15 +52,28 @@ function isMultiTenant(env: Env): boolean {
   return TRUTHY.has((env.MCP_MULTI_TENANT ?? "").trim().toLowerCase());
 }
 
+async function sha256Hex(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 // A stable, non-reversible id for whichever container instance should serve
 // this caller — never the raw token itself, so it doesn't sit around as a
 // Durable Object name. Two requests with the same token always hash to the
 // same id, so a tenant's traffic keeps landing on their own container.
 async function tenantContainerId(request: Request): Promise<string | undefined> {
   const token = presentedToken(request);
-  if (!token) return undefined;
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
-  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  return token ? sha256Hex(token) : undefined;
+}
+
+// Rate-limit key: same per-caller hash as tenantContainerId (never the raw
+// token — see above), so one caller's usage can't burn through another's
+// quota. A missing/empty token collapses to one shared bucket for all
+// unauthenticated traffic, which is fine — those requests get rejected by
+// the Python app's own auth check regardless, this just caps how many of
+// them can reach the container first.
+async function rateLimitKey(request: Request): Promise<string> {
+  return sha256Hex(presentedToken(request) || "anonymous");
 }
 
 export default {
@@ -66,6 +81,11 @@ export default {
     const { pathname } = new URL(request.url);
 
     if (pathname === "/mcp" || pathname.startsWith("/mcp/")) {
+      const { success } = await env.MCP_RATE_LIMITER.limit({ key: await rateLimitKey(request) });
+      if (!success) {
+        return new Response("Rate limit exceeded. Try again shortly.", { status: 429 });
+      }
+
       // Multi-tenant mode: route each caller's own token to its own
       // container instance — each is a separate Durable Object with its own
       // process, memory, and idle timer (sleepAfter above), so one tenant's
@@ -87,7 +107,18 @@ export default {
       // Always the shared/default instance — a liveness check isn't tied to
       // any one tenant.
       const container = getContainer(env.YNAB_MCP_CONTAINER);
-      return container.fetch(request);
+      const response = await container.fetch(request);
+      // Which Worker version actually answered — the question we had no
+      // answer to while debugging the container naming conflict, where a
+      // deploy could "succeed" on the Worker side while the container half
+      // silently failed. This is the Worker's own version, not the
+      // container image's — the two deploy together but aren't the same
+      // artifact, so a mismatch between what you expect here and the image
+      // tag in the Cloudflare dashboard's container logs is itself a signal.
+      const headers = new Headers(response.headers);
+      headers.set("X-Worker-Version-Id", env.CF_VERSION_METADATA.id);
+      headers.set("X-Worker-Version-Tag", env.CF_VERSION_METADATA.tag || "untagged");
+      return new Response(response.body, { status: response.status, headers });
     }
 
     // Everything else (/, /privacy-policy) is the static site built from

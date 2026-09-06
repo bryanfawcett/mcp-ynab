@@ -49,6 +49,8 @@ jobs:
   # `assets` binding in wrangler.jsonc for "/" and "/privacy-policy" — this is
   # what `npm run deploy` (worker/package.json's build:site) runs before
   # `wrangler deploy`, so a broken build fails here instead of at deploy time.
+  # Also runs an APCA contrast audit of the site's design tokens and an
+  # axe-core accessibility/language pass over every built page.
   worker-site-build:
     runs-on: ubuntu-latest
     defaults:
@@ -63,6 +65,9 @@ jobs:
           cache-dependency-path: worker/site/package-lock.json
       - run: npm ci
       - run: npm run build
+      - run: npm run check:contrast
+      - run: npx playwright install --with-deps chromium
+      - run: npm run check:a11y
 
   # Builds worker/Dockerfile (image_build_context points back at the repo root
   # for its COPY paths) and boots it, the way Cloudflare's own build does when

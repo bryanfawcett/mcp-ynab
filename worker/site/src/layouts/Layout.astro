@@ -38,10 +38,19 @@ const FAVICON =
     --bg-raised: #2E2C29;
     --border: #2A2927;
     --text-primary: #F3F3F1;
-    --text-secondary: #A09C93;
+    --text-secondary: #B8B3A8;
 
     --radius-lg: 14px;
     --radius-full: 9999px;
+
+    /* Semantic status colors (project page) — separate from the
+       brand accent above, never used interchangeably with it. */
+    --status-done: #7CD992;
+    --status-done-bg: #17301F;
+    --status-action: #FFD740;
+    --status-action-bg: #35301A;
+    --status-blocked: #F2B8B5;
+    --status-blocked-bg: #3A211F;
   }
   @media (prefers-color-scheme: light) {
     :root:not([data-theme]) {
@@ -52,6 +61,13 @@ const FAVICON =
       --border: #E7E5E0;
       --text-primary: #1A1918;
       --text-secondary: #55514B;
+
+      --status-done: #166B3A;
+      --status-done-bg: #E4F3E9;
+      --status-action: #8A5A00;
+      --status-action-bg: #FBEFD8;
+      --status-blocked: #B3261E;
+      --status-blocked-bg: #FBE4E2;
     }
   }
   * { box-sizing: border-box; }
@@ -93,13 +109,65 @@ const FAVICON =
   td code { color: var(--color-accent); }
   a { color: var(--color-accent); text-decoration: none; }
   a:hover { text-decoration: underline; }
-  footer { margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--border); color: var(--text-secondary); font-size: .85rem; }
   footer a { color: var(--text-secondary); }
+
+  .site-header {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    max-width: 760px; margin: 0 auto; padding: 1.5rem 1.5rem 0;
+  }
+  .site-header .brand {
+    display: flex; align-items: center; gap: .6rem;
+    font-family: var(--font-serif); font-weight: 600; font-size: 1rem;
+    color: var(--text-primary); text-decoration: none;
+  }
+  .site-header .brand:hover { text-decoration: none; }
+  .site-header .brand img { width: 26px; height: 26px; border-radius: 7px; display: block; }
+  .site-header nav { display: flex; gap: 1.5rem; font-size: .88rem; }
+  .site-header nav a { color: var(--text-secondary); }
+  .site-header nav a:hover { color: var(--text-primary); text-decoration: none; }
+
+  .site-footer {
+    max-width: 760px; margin: 4rem auto 0; padding: 1.75rem 1.5rem 3rem;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+    font-size: .82rem; color: var(--text-secondary);
+  }
+  .site-footer nav { display: flex; gap: 1.25rem; }
+  .site-footer nav a { color: var(--text-secondary); }
+  .site-footer nav a:hover { color: var(--text-primary); }
+
+  .skip-link {
+    position: absolute; left: -999px; top: 0; z-index: 10;
+    background: var(--color-accent); color: var(--bg-base);
+    padding: .6rem 1rem; border-radius: 0 0 8px 0;
+    font-family: var(--font-mono); font-size: .82rem; text-decoration: none;
+  }
+  .skip-link:focus { left: 0; }
 </style>
 </head>
 <body>
-<main>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <a class="brand" href="/">
+    <img src={FAVICON} alt="">
+    Nyuchi MCP for YNAB
+  </a>
+  <nav aria-label="Primary">
+    <a href="/project">Project</a>
+    <a href="/privacy-policy">Privacy</a>
+    <a href="https://nyuchi.com" target="_blank" rel="noopener">nyuchi.com</a>
+  </nav>
+</header>
+<main id="main">
   <slot />
 </main>
+<footer class="site-footer">
+  <span>&copy; 2026 Nyuchi Africa. Part of the Bundu Foundation. Independent, unofficial — not affiliated with or endorsed by YNAB.</span>
+  <nav aria-label="Footer">
+    <a href="https://github.com/bryanfawcett/mcp-ynab" target="_blank" rel="noopener">GitHub</a>
+    <a href="/project">Project</a>
+    <a href="/privacy-policy">Privacy Policy</a>
+  </nav>
+</footer>
 </body>
 </html>
