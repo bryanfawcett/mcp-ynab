@@ -3,6 +3,7 @@ from datetime import date
 
 from src.models.common import milliunits_to_dollars
 from src.server import _shared
+from src.server.dashboard import DASHBOARD_URI  # also registers the dashboard ui:// resource
 
 MONEY_FLOW_EXCLUDE_GROUPS = {"Internal Master Category", "Credit Card Payments"}
 
@@ -117,7 +118,7 @@ async def get_spending_by_category(plan_id: str, month: str = "current") -> str:
     return json.dumps(result, indent=2)
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(meta={"ui": {"resourceUri": DASHBOARD_URI}, "ui/resourceUri": DASHBOARD_URI})
 @_shared.handle_errors
 async def get_monthly_report(
     plan_id: str, month: str = "current", trend_months: int = 6, top_n: int = 8
@@ -125,8 +126,9 @@ async def get_monthly_report(
     """Build a full monthly budget report: income/spending summary, category-group and
     top-category breakdowns, overspent categories, top payees, and a multi-month trend.
 
-    Meant as the single call behind a "budget dashboard" — everything in one payload
-    needed for KPI tiles, a category chart, a trend chart, and summary tables. Ask for
+    On hosts that support MCP Apps (e.g. Claude web/Desktop), this renders as an
+    interactive dashboard (KPI tiles, charts, tables) automatically — no separate
+    artifact needed. On hosts that don't, the same data comes back as JSON. Ask for
     this instead of combining get_spending_by_category and get_money_flow separately.
 
     Args:

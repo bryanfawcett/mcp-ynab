@@ -79,7 +79,7 @@ export const LANDING_PAGE_HTML = `<!doctype html>
       <li><b>Delta sync</b> — only fetches what changed since the last call, using YNAB's server knowledge</li>
       <li><b>4-tier caching</b> — TTL cache, delta sync, retry with backoff, persistent storage</li>
       <li><b>Search &amp; analytics</b> — text search across transactions, per-category spending breakdowns, money-flow data</li>
-      <li><b>Monthly reports</b> — income/spending summary, category and payee breakdowns, overspent categories, and a multi-month trend in one call — built for a budget dashboard</li>
+      <li><b>Monthly reports with a live dashboard</b> — income/spending summary, category and payee breakdowns, overspent categories, and a multi-month trend, rendered as an interactive dashboard on MCP Apps-capable hosts (Claude web/Desktop)</li>
       <li><b>Bulk operations</b> — create or update multiple transactions in a single call</li>
       <li><b>Dollar amounts</b> — accepts plain dollars, converts to YNAB's internal format automatically</li>
     </ul>

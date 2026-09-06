@@ -37,6 +37,7 @@ This repo contains three things:
 - **`models/`** — Pydantic models, each module exports a `*_DEFAULT_EXCLUDE` set defining the fields hidden from MCP responses by default. The registry in `src/server/_shared.py` (`DEFAULT_EXCLUDES`) maps model classes to their default exclude sets. Every MCP tool accepts an optional `exclude_fields: list[str]` param that, when provided, fully replaces the default. See `FIELDS.md` for the per-model field reference.
 - **`config.py`** — `Settings` via pydantic-settings. Cache DB path is platform-specific (`~/Library/Application Support/ynab-mcp-server/cache.db` on macOS).
 - **`server/http.py`** — ASGI app exposing the same tools over the MCP SDK's streamable-http transport instead of stdio, gated by a `MCP_AUTH_TOKEN` bearer-token check (the SDK's built-in OAuth auth is overkill for a single-user deployment). Entry point for `worker/Dockerfile`.
+- **`server/dashboard.py`** — MCP Apps (SEP-1865) `ui://` resource: a self-contained HTML/JS dashboard (Chart.js via CDN) linked to `get_monthly_report` through that tool's `meta={"ui": {"resourceUri": ...}}`. Hosts that support MCP Apps render it in a sandboxed iframe instead of showing raw JSON; the app reads `result.content[0].text` (the same JSON every tool already returns) rather than SDK-native `structuredContent`, since giving `get_monthly_report` a schema'd return type for that would conflict with `handle_errors`' plain-string error responses.
 
 ### Cloudflare Worker (`worker/`)
 
