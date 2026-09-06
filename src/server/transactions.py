@@ -1,6 +1,6 @@
 import json
 
-from src.server import _shared
+from src.server import _shared, icons
 from src.server._shared import dollars_to_milliunits, serialize, serialize_list
 
 
@@ -13,7 +13,7 @@ def _prepare_subtransaction(sub: dict) -> dict:
     return out
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.TRANSACTION])
 @_shared.handle_errors
 async def list_transactions(
     plan_id: str,
@@ -35,7 +35,7 @@ async def list_transactions(
     return serialize_list(transactions, exclude_fields=exclude_fields)
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.TRANSACTION])
 @_shared.handle_errors
 async def get_transaction(
     transaction_id: str,
@@ -55,7 +55,7 @@ async def get_transaction(
     return serialize(txn, exclude_fields=exclude_fields)
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.TRANSACTION])
 @_shared.handle_errors
 async def get_transactions_by_account(
     account_id: str,
@@ -81,7 +81,7 @@ async def get_transactions_by_account(
     return serialize_list(transactions, exclude_fields=exclude_fields)
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.TRANSACTION])
 @_shared.handle_errors
 async def get_transactions_by_category(
     category_id: str,
@@ -111,7 +111,7 @@ async def get_transactions_by_category(
     return serialize_list(transactions, exclude_fields=exclude_fields)
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.TRANSACTION])
 @_shared.handle_errors
 async def get_transactions_by_month(
     month: str,
@@ -137,7 +137,7 @@ async def get_transactions_by_month(
     return serialize_list(transactions, exclude_fields=exclude_fields)
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.TRANSACTION])
 @_shared.handle_errors
 async def get_transactions_by_payee(
     payee_id: str,
@@ -167,7 +167,7 @@ async def get_transactions_by_payee(
     return serialize_list(transactions, exclude_fields=exclude_fields)
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.TRANSACTION])
 @_shared.handle_errors
 async def search_transactions(
     plan_id: str,
@@ -215,7 +215,7 @@ async def search_transactions(
     return serialize_list(matches, exclude_fields=exclude_fields)
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.TRANSACTION])
 @_shared.handle_errors
 async def create_transaction(
     plan_id: str,
@@ -281,7 +281,7 @@ async def create_transaction(
     return serialize(txn, exclude_fields=exclude_fields)
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.TRANSACTION])
 @_shared.handle_errors
 async def create_transactions(
     plan_id: str,
@@ -336,7 +336,7 @@ async def create_transactions(
     return serialize_list(txns, exclude_fields=exclude_fields)
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.TRANSACTION])
 @_shared.handle_errors
 async def update_transaction(
     plan_id: str,
@@ -408,7 +408,7 @@ async def update_transaction(
     return serialize(txn, exclude_fields=exclude_fields)
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.TRANSACTION])
 @_shared.handle_errors
 async def delete_transaction(
     transaction_id: str,
@@ -428,7 +428,7 @@ async def delete_transaction(
     return serialize(txn, exclude_fields=exclude_fields)
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.TRANSACTION])
 @_shared.handle_errors
 async def import_transactions(plan_id: str) -> str:
     """Import available transactions on all linked accounts for the given plan.
@@ -444,7 +444,7 @@ async def import_transactions(plan_id: str) -> str:
     return json.dumps({"transaction_ids": transaction_ids}, indent=2)
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.TRANSACTION])
 @_shared.handle_errors
 async def update_transactions(
     plan_id: str,

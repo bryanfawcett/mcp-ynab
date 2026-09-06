@@ -1,8 +1,8 @@
-from src.server import _shared
+from src.server import _shared, icons
 from src.server._shared import dollars_to_milliunits, serialize, serialize_list
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.SCHEDULED])
 @_shared.handle_errors
 async def list_scheduled_transactions(
     plan_id: str, exclude_fields: list[str] | None = None
@@ -19,7 +19,7 @@ async def list_scheduled_transactions(
     return serialize_list(transactions, exclude_fields=exclude_fields)
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.SCHEDULED])
 @_shared.handle_errors
 async def get_scheduled_transaction(
     scheduled_transaction_id: str,
@@ -39,7 +39,7 @@ async def get_scheduled_transaction(
     return serialize(txn, exclude_fields=exclude_fields)
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.SCHEDULED])
 @_shared.handle_errors
 async def create_scheduled_transaction(
     plan_id: str,
@@ -99,7 +99,7 @@ async def create_scheduled_transaction(
     return serialize(txn, exclude_fields=exclude_fields)
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.SCHEDULED])
 @_shared.handle_errors
 async def update_scheduled_transaction(
     plan_id: str,
@@ -163,7 +163,7 @@ async def update_scheduled_transaction(
     return serialize(txn, exclude_fields=exclude_fields)
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.SCHEDULED])
 @_shared.handle_errors
 async def delete_scheduled_transaction(
     scheduled_transaction_id: str,

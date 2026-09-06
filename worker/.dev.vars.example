@@ -3,6 +3,14 @@
 # "Remote deployment" section — either via `wrangler secret put` or, when the
 # Worker is connected to this repo through Workers Builds, under the Worker's
 # Settings > Variables & Secrets in the Cloudflare dashboard.
-
+#
+# Single-tenant (default) — one deployment, one YNAB account, gated by a
+# shared secret:
 YNAB_API_KEY=replace-with-your-ynab-personal-access-token
 MCP_AUTH_TOKEN=replace-with-a-long-random-token
+
+# Multi-tenant instead — lets other people use this deployment with their own
+# YNAB accounts (each caller's own token travels with their request, so no
+# YNAB_API_KEY/MCP_AUTH_TOKEN needed at all). Uncomment this and remove the
+# two lines above:
+# MCP_MULTI_TENANT=true

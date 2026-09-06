@@ -120,7 +120,7 @@ export const LANDING_PAGE_HTML = `<!doctype html>
   <h2>What it does</h2>
   <div class="card">
     <ul class="features">
-      <li><b>30+ tools</b> — budgets, accounts, transactions, categories, payees, months, scheduled transactions, and analytics</li>
+      <li><b>50+ tools</b> — budgets, accounts, transactions, categories, payees, months, scheduled transactions, analytics, and reconciliation</li>
       <li><b>Delta sync</b> — only fetches what changed since the last call, using YNAB's server knowledge</li>
       <li><b>4-tier caching</b> — TTL cache, delta sync, retry with backoff, persistent storage</li>
       <li><b>Search &amp; analytics</b> — text search across transactions, per-category spending breakdowns, money-flow data</li>
@@ -145,6 +145,7 @@ export const LANDING_PAGE_HTML = `<!doctype html>
         <tr><th>Transactions</th><td><code>list_transactions</code>, <code>get_transaction</code>, <code>get_transactions_by_account</code>, <code>get_transactions_by_category</code>, <code>get_transactions_by_month</code>, <code>get_transactions_by_payee</code>, <code>search_transactions</code>, <code>create_transaction</code>, <code>create_transactions</code>, <code>update_transaction</code>, <code>update_transactions</code>, <code>delete_transaction</code>, <code>import_transactions</code></td></tr>
         <tr><th>Scheduled</th><td><code>list_scheduled_transactions</code>, <code>get_scheduled_transaction</code>, <code>create_scheduled_transaction</code>, <code>update_scheduled_transaction</code>, <code>delete_scheduled_transaction</code></td></tr>
         <tr><th>Analytics</th><td><code>get_money_flow</code>, <code>get_spending_by_category</code>, <code>get_monthly_report</code></td></tr>
+        <tr><th>Reconciliation</th><td><code>export_transactions_csv</code>, <code>reconcile_account</code></td></tr>
       </tbody>
     </table>
   </div>
@@ -152,13 +153,22 @@ export const LANDING_PAGE_HTML = `<!doctype html>
   <h2>Connecting</h2>
   <div class="card">
     <p style="margin:0 0 1rem;">
-      This is a private, single-user instance — every request needs a bearer token.
+      Every request needs a bearer token — and here, that token is your own
+      <a href="https://app.ynab.com/settings/developer" target="_blank" rel="noopener">YNAB personal access token</a>,
+      not a password for this site. It's used only to make YNAB API calls on your behalf, for
+      that request; nobody else's budget is visible to you and yours isn't visible to them.
+    </p>
+    <p style="margin:0 0 1rem;">
       In Claude web (<b>Settings → Connectors → Add custom connector</b>), use the
-      MCP endpoint above with <code>?token=&lt;token&gt;</code> appended; clients that support
-      custom headers can send <code>Authorization: Bearer &lt;token&gt;</code> instead.
+      MCP endpoint above with <code>?token=&lt;your-YNAB-token&gt;</code> appended; clients that
+      support custom headers can send <code>Authorization: Bearer &lt;your-YNAB-token&gt;</code>
+      instead.
     </p>
     <p style="margin:0;">
-      Running the open-source server yourself instead? See
+      Running the open-source server yourself instead — for just you, or for others under
+      your own domain? See
+      <a href="https://github.com/bryanfawcett/mcp-ynab" target="_blank" rel="noopener">this fork</a>'s
+      README for the Cloudflare deployment, or
       <a href="https://mcp-ynab.com" target="_blank" rel="noopener">mcp-ynab.com</a> for the local
       stdio setup (Claude Desktop, Claude Code, ChatGPT).
     </p>

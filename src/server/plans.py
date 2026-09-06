@@ -1,8 +1,8 @@
-from src.server import _shared
+from src.server import _shared, icons
 from src.server._shared import serialize, serialize_list
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.PLAN])
 @_shared.handle_errors
 async def list_plans(exclude_fields: list[str] | None = None) -> str:
     """List all plans in the user's YNAB account. Call this first to get plan IDs.
@@ -16,7 +16,7 @@ async def list_plans(exclude_fields: list[str] | None = None) -> str:
     return serialize_list(plans, exclude_fields=exclude_fields)
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.PLAN])
 @_shared.handle_errors
 async def get_plan(plan_id: str, exclude_fields: list[str] | None = None) -> str:
     """Get details for a specific plan.
@@ -31,7 +31,7 @@ async def get_plan(plan_id: str, exclude_fields: list[str] | None = None) -> str
     return serialize(plan, exclude_fields=exclude_fields)
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.PLAN])
 @_shared.handle_errors
 async def get_plan_settings(
     plan_id: str, exclude_fields: list[str] | None = None

@@ -1,8 +1,8 @@
-from src.server import _shared
+from src.server import _shared, icons
 from src.server._shared import serialize
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.USER])
 @_shared.handle_errors
 async def get_user(exclude_fields: list[str] | None = None) -> str:
     """Get the authenticated user's information.

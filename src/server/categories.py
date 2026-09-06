@@ -1,4 +1,4 @@
-from src.server import _shared
+from src.server import _shared, icons
 from src.server._shared import dollars_to_milliunits, serialize, serialize_list
 
 _FIELDS_DOC = (
@@ -8,7 +8,7 @@ _FIELDS_DOC = (
 )
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.CATEGORY])
 @_shared.handle_errors
 async def list_categories(
     plan_id: str, exclude_fields: list[str] | None = None
@@ -25,7 +25,7 @@ async def list_categories(
     return serialize_list(groups, exclude_fields=exclude_fields)
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.CATEGORY])
 @_shared.handle_errors
 async def get_category(
     category_id: str, plan_id: str, exclude_fields: list[str] | None = None
@@ -43,7 +43,7 @@ async def get_category(
     return serialize(cat, exclude_fields=exclude_fields)
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.CATEGORY])
 @_shared.handle_errors
 async def create_category(
     plan_id: str,
@@ -82,7 +82,7 @@ async def create_category(
     return serialize(cat, exclude_fields=exclude_fields)
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.CATEGORY])
 @_shared.handle_errors
 async def update_category(
     plan_id: str,
@@ -124,7 +124,7 @@ async def update_category(
     return serialize(cat, exclude_fields=exclude_fields)
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.CATEGORY])
 @_shared.handle_errors
 async def create_category_group(
     plan_id: str,
@@ -144,7 +144,7 @@ async def create_category_group(
     return serialize(group, exclude_fields=exclude_fields)
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.CATEGORY])
 @_shared.handle_errors
 async def update_category_group(
     plan_id: str,
@@ -168,7 +168,7 @@ async def update_category_group(
     return serialize(group, exclude_fields=exclude_fields)
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.CATEGORY])
 @_shared.handle_errors
 async def get_category_for_month(
     category_id: str,
@@ -190,7 +190,7 @@ async def get_category_for_month(
     return serialize(cat, exclude_fields=exclude_fields)
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.CATEGORY])
 @_shared.handle_errors
 async def update_category_for_month(
     category_id: str,
