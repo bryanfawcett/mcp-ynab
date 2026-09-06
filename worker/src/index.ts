@@ -149,6 +149,17 @@ export default {
       return isAtCapacity(response) ? capacityResponse() : response;
     }
 
+    if (pathname.startsWith("/oauth/") || pathname.startsWith("/.well-known/oauth-")) {
+      // The OAuth proxy's own routes (src/server/oauth.py) — added there in
+      // the same change that forgot to route them here, so every one of
+      // these 404'd before ever reaching the container. Always the shared/
+      // default instance: none of this is naturally per-tenant (a caller
+      // has no token yet for most of this flow, and OAuth state lives in
+      // KV, not in-process, so any container instance can serve it).
+      const container = getContainer(env.YNAB_MCP_CONTAINER);
+      return container.fetch(request);
+    }
+
     if (pathname === "/health") {
       // Always the shared/default instance — a liveness check isn't tied to
       // any one tenant.
