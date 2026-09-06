@@ -45,6 +45,25 @@ jobs:
       - run: npm ci
       - run: npx tsc --noEmit
 
+  # Builds the Astro static site (worker/site) that Cloudflare serves via the
+  # `assets` binding in wrangler.jsonc for "/" and "/privacy-policy" — this is
+  # what `npm run deploy` (worker/package.json's build:site) runs before
+  # `wrangler deploy`, so a broken build fails here instead of at deploy time.
+  worker-site-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: worker/site
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: worker/site/package-lock.json
+      - run: npm ci
+      - run: npm run build
+
   # Builds worker/Dockerfile (image_build_context points back at the repo root
   # for its COPY paths) and boots it, the way Cloudflare's own build does when
   # the Worker is connected via Workers Builds. Catches breakage no local dev

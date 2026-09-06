@@ -1,0 +1,86 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+<Layout
+  title="Nyuchi MCP for YNAB"
+  description="A Model Context Protocol server connecting AI assistants to a YNAB budget, built by Nyuchi."
+>
+  <div class="badge"><span class="dot"></span> Running on Cloudflare — always on, no local install</div>
+  <h1>Talk to your budget<br><span>in plain English.</span></h1>
+  <p class="lede">
+    A remote deployment of <a href="https://github.com/bryanfawcett/mcp-ynab" target="_blank" rel="noopener">mcp-ynab</a>,
+    an open-source <a href="https://modelcontextprotocol.io" target="_blank" rel="noopener">Model Context Protocol</a>
+    server that connects an AI assistant directly to a <a href="https://www.ynab.com/" target="_blank" rel="noopener">YNAB</a>
+    budget, built and hosted by <a href="https://nyuchi.com" target="_blank" rel="noopener">Nyuchi</a>. Any MCP client
+    that speaks remote connectors — Claude and ChatGPT included — can reach it without installing anything first.
+  </p>
+
+  <div class="endpoint">
+    <span class="mono" style="color:var(--text-secondary)">MCP endpoint —</span>
+    <code>https://ynab.nyuchi.com/mcp</code>
+  </div>
+
+  <h2>What it does</h2>
+  <div class="card">
+    <ul class="features">
+      <li><b>50+ tools</b> — budgets, accounts, transactions, categories, payees, months, scheduled transactions, analytics, and reconciliation</li>
+      <li><b>Delta sync</b> — only fetches what changed since the last call, using YNAB's server knowledge</li>
+      <li><b>4-tier caching</b> — TTL cache, delta sync, retry with backoff, persistent storage</li>
+      <li><b>Search &amp; analytics</b> — text search across transactions, per-category spending breakdowns, money-flow data</li>
+      <li><b>Monthly reports with a live dashboard</b> — income/spending summary, category and payee breakdowns, overspent categories, and a multi-month trend, rendered as an interactive dashboard on MCP Apps-capable hosts (Claude, ChatGPT)</li>
+      <li><b>Reconciliation</b> — compare an account's cleared transactions against a real-world statement balance, the same workflow as YNAB's own "Reconcile" button</li>
+      <li><b>Bulk operations</b> — create or update multiple transactions in a single call</li>
+      <li><b>Dollar amounts</b> — accepts plain dollars, converts to YNAB's internal format automatically</li>
+    </ul>
+  </div>
+
+  <h2>Available tools</h2>
+  <div class="card">
+    <table>
+      <tbody>
+        <tr><th>User</th><td><code>get_user</code></td></tr>
+        <tr><th>Plans</th><td><code>list_plans</code>, <code>get_plan</code>, <code>get_plan_settings</code></td></tr>
+        <tr><th>Accounts</th><td><code>list_accounts</code>, <code>get_account</code>, <code>create_account</code></td></tr>
+        <tr><th>Categories</th><td><code>list_categories</code>, <code>get_category</code>, <code>create_category</code>, <code>update_category</code>, <code>create_category_group</code>, <code>update_category_group</code>, <code>get_category_for_month</code>, <code>update_category_for_month</code></td></tr>
+        <tr><th>Payees</th><td><code>list_payees</code>, <code>create_payee</code>, <code>get_payee</code>, <code>update_payee</code></td></tr>
+        <tr><th>Payee locations</th><td><code>list_payee_locations</code>, <code>get_payee_location</code>, <code>get_payee_locations_by_payee</code></td></tr>
+        <tr><th>Months</th><td><code>list_months</code>, <code>get_month</code></td></tr>
+        <tr><th>Money movements</th><td><code>list_money_movements</code>, <code>get_money_movements_for_month</code>, <code>list_money_movement_groups</code>, <code>get_money_movement_groups_for_month</code></td></tr>
+        <tr><th>Transactions</th><td><code>list_transactions</code>, <code>get_transaction</code>, <code>get_transactions_by_account</code>, <code>get_transactions_by_category</code>, <code>get_transactions_by_month</code>, <code>get_transactions_by_payee</code>, <code>search_transactions</code>, <code>create_transaction</code>, <code>create_transactions</code>, <code>update_transaction</code>, <code>update_transactions</code>, <code>delete_transaction</code>, <code>import_transactions</code></td></tr>
+        <tr><th>Scheduled</th><td><code>list_scheduled_transactions</code>, <code>get_scheduled_transaction</code>, <code>create_scheduled_transaction</code>, <code>update_scheduled_transaction</code>, <code>delete_scheduled_transaction</code></td></tr>
+        <tr><th>Analytics</th><td><code>get_money_flow</code>, <code>get_spending_by_category</code>, <code>get_monthly_report</code></td></tr>
+        <tr><th>Reconciliation</th><td><code>export_transactions_csv</code>, <code>reconcile_account</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Connecting</h2>
+  <div class="card">
+    <p style="margin:0 0 1rem;">
+      Every request needs a bearer token — and here, that token is your own
+      <a href="https://app.ynab.com/settings/developer" target="_blank" rel="noopener">YNAB personal access token</a>,
+      not a password for this site. It's used only to make YNAB API calls on your behalf, for
+      that request; nobody else's budget is visible to you and yours isn't visible to them.
+    </p>
+    <p style="margin:0 0 1rem;">
+      In Claude web (<b>Settings → Connectors → Add custom connector</b>), use the
+      MCP endpoint above with <code>?token=&lt;your-YNAB-token&gt;</code> appended; clients that
+      support custom headers can send <code>Authorization: Bearer &lt;your-YNAB-token&gt;</code>
+      instead.
+    </p>
+    <p style="margin:0;">
+      Running the open-source server yourself instead — for just you, or for others under
+      your own domain? See
+      <a href="https://github.com/bryanfawcett/mcp-ynab" target="_blank" rel="noopener">this fork</a>'s
+      README for the Cloudflare deployment, or
+      <a href="https://mcp-ynab.com" target="_blank" rel="noopener">mcp-ynab.com</a> for the local
+      stdio setup (Claude Desktop, Claude Code, ChatGPT).
+    </p>
+  </div>
+
+  <footer>
+    Runs the open-source <a href="https://github.com/bryanfawcett/mcp-ynab" target="_blank" rel="noopener">mcp-ynab</a>
+    server on a Cloudflare Container, built by <a href="https://nyuchi.com" target="_blank" rel="noopener">Nyuchi</a>.
+    AGPL-3.0 licensed. <a href="/privacy-policy">Privacy Policy</a>
+  </footer>
+</Layout>

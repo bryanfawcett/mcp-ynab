@@ -19,6 +19,8 @@ node_modules/
 # Astro
 website/dist/
 website/.astro/
+worker/site/dist/
+worker/site/.astro/
 
 # Vercel
 .vercel

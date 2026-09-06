@@ -13,10 +13,11 @@ needed no changes: giving it a Pydantic/TypedDict return type instead of `str` t
 SDK-native structuredContent would break handle_errors, whose error branches return a
 plain JSON string incompatible with a structured-output schema.
 
-Styling follows the Bundu brand system (Mzizi design tokens: colors, typography,
-radii — see mzizi_get_tokens). Bundu's own ecosystem mineral is copper (#BF5A36
-light / #FF8A65 dark), used here as the accent; chart series use the "experimental"
-7-hue set the tokens document as built for categorical/data-viz use.
+Styling follows the Mzizi design tokens (colors, typography, radii — see
+mzizi_get_tokens), specifically Nyuchi's own ecosystem mineral, gold (#5D4037
+light / #FFD740 dark), used here as the accent — distinct from Bundu's copper,
+since this is a Nyuchi product. Chart series use the "experimental" 7-hue set
+the tokens document as built for categorical/data-viz use.
 """
 
 from src.server import _shared
@@ -43,7 +44,7 @@ DASHBOARD_HTML = """<!doctype html>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Serif:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    /* Bundu brand tokens (dark by default; light overrides below) */
+    /* Nyuchi brand tokens (dark by default; light overrides below) */
     /* Matches bryanfawcett.com's all-serif type system, not Mzizi's generic
        Noto defaults: Cormorant Garamond for the display heading, IBM Plex
        Serif for body copy (no sans-serif at all), IBM Plex Mono for figures. */
@@ -51,7 +52,7 @@ DASHBOARD_HTML = """<!doctype html>
     --font-serif: "IBM Plex Serif", ui-serif, Georgia, serif;
     --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
-    --color-accent: #FF8A65;   /* Bundu ecosystem mineral: copper (dark) */
+    --color-accent: #FFD740;   /* Nyuchi ecosystem mineral: gold (dark) */
     --color-bg: #0E0D0C;
     --color-card: #131211;
     --color-border: #2A2927;  /* warm stone, not cool gray */
@@ -73,7 +74,7 @@ DASHBOARD_HTML = """<!doctype html>
   }
   @media (prefers-color-scheme: light) {
     :root:not([data-theme]) {
-      --color-accent: #BF5A36;
+      --color-accent: #5D4037;
       --color-bg: #F3F3F1;
       --color-card: #EEEEEC;
       --color-border: #E7E5E0;
@@ -91,7 +92,7 @@ DASHBOARD_HTML = """<!doctype html>
     }
   }
   [data-theme="light"] {
-    --color-accent: #BF5A36;
+    --color-accent: #5D4037;
     --color-bg: #F3F3F1;
     --color-card: #EEEEEC;
     --color-border: #E7E5E0;
@@ -251,7 +252,7 @@ function render(data) {
   const bodyStyle = getComputedStyle(document.body);
   const textColor = bodyStyle.getPropertyValue("--color-text-secondary").trim() || "#A09C93";
   const gridColor = bodyStyle.getPropertyValue("--color-border").trim() || "#2A2927";
-  const accentColor = bodyStyle.getPropertyValue("--color-accent").trim() || "#FF8A65";
+  const accentColor = bodyStyle.getPropertyValue("--color-accent").trim() || "#FFD740";
   const palette = chartPalette();
   Chart.defaults.color = textColor;
   Chart.defaults.borderColor = gridColor;

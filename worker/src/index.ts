@@ -1,5 +1,4 @@
 import { Container, getContainer } from "@cloudflare/containers";
-import { LANDING_PAGE_HTML } from "./landing";
 
 interface Env {
   YNAB_MCP_CONTAINER: DurableObjectNamespace<YnabMcpContainer>;
@@ -50,6 +49,7 @@ const TRUTHY = new Set(["true", "1", "yes", "on", "y", "t"]);
 function isMultiTenant(env: Env): boolean {
   return TRUTHY.has((env.MCP_MULTI_TENANT ?? "").trim().toLowerCase());
 }
+
 // A stable, non-reversible id for whichever container instance should serve
 // this caller — never the raw token itself, so it doesn't sit around as a
 // Durable Object name. Two requests with the same token always hash to the
@@ -90,12 +90,10 @@ export default {
       return container.fetch(request);
     }
 
-    if (pathname === "/") {
-      return new Response(LANDING_PAGE_HTML, {
-        headers: { "content-type": "text/html; charset=utf-8" },
-      });
-    }
-
+    // Everything else (/, /privacy-policy) is the static site built from
+    // worker/site — Cloudflare serves it directly from the `assets` binding
+    // in wrangler.jsonc before this fetch handler even runs, so a matching
+    // request never reaches here. This only catches a genuinely unknown path.
     return new Response("Not found", { status: 404 });
   },
 };

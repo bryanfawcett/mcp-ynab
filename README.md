@@ -96,7 +96,7 @@ For connecting Claude web (or any client that needs a remote MCP server rather
 than a local stdio process), `worker/` deploys the same Python server,
 unchanged, behind a Cloudflare Container and a small routing Worker, on a
 subdomain of your choosing — e.g. this fork's own instance runs at
-`https://budget.bryanfawcett.com/mcp`, but nothing below is tied to that
+`https://ynab.nyuchi.com/mcp`, but nothing below is tied to that
 domain or account. Fork this repo, point the pieces below at your own domain
 and Cloudflare account, and you have your own private remote instance.
 
@@ -137,7 +137,7 @@ alive at once; raise it if you expect more concurrent users).
   here is also what you'll name the Worker in the dashboard (Option B below
   checks that the two match).
 - `routes[0].pattern` — your own subdomain (e.g. `mcp.yourdomain.com`)
-  instead of `budget.bryanfawcett.com`. This repo declares it as a [Custom
+  instead of `ynab.nyuchi.com`. This repo declares it as a [Custom
   Domain](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/)
   rather than a path-scoped [Route](https://developers.cloudflare.com/workers/configuration/routing/routes/),
   on the assumption that the Worker is the only thing on that subdomain —
@@ -170,10 +170,11 @@ alive at once; raise it if you expect more concurrent users).
    npx wrangler secret put YNAB_API_KEY      # single-tenant only
    npx wrangler secret put MCP_AUTH_TOKEN    # single-tenant only
    npx wrangler secret put MCP_MULTI_TENANT  # multi-tenant only — value: true
-   npx wrangler deploy
+   npm run deploy
    ```
    (Secrets aren't read from `wrangler.jsonc` — see the [Container secrets guide](https://developers.cloudflare.com/containers/examples/env-vars-and-secrets/).
-   `wrangler deploy` builds the image via your local Docker.)
+   `npm run deploy` builds the Astro site in `worker/site` first, then runs
+   `wrangler deploy`, which builds the container image via your local Docker.)
 
    **Option B — connect your fork in the Cloudflare dashboard (Workers
    Builds), so it deploys automatically on every push to `main`:**
@@ -183,7 +184,11 @@ alive at once; raise it if you expect more concurrent users).
    2. Set **Root directory** to `worker` — Cloudflare's git-integration builds
       a Dockerfile only when it's under the configured root directory, which
       is why it lives at `worker/Dockerfile` rather than the repo root.
-   3. Leave **Deploy command** as the default `npx wrangler deploy`.
+   3. Set **Build command** to `npm run build:site` — this builds the Astro
+      landing page/privacy policy (`worker/site`) into `worker/site/dist`,
+      which `wrangler.jsonc`'s `assets` binding serves; without this step the
+      deploy command below would upload an empty (or stale) assets directory.
+      Leave **Deploy command** as the default `npx wrangler deploy`.
    4. Set **Production branch** to `main` under **Settings → Builds**. Without
       this, Workers Builds deploys to *production* off of every push to
       *every* branch — including work-in-progress PR branches — rather than
