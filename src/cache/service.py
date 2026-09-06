@@ -537,6 +537,11 @@ class CacheService:
             lambda bid, **kw: self.client.get_payees(bid, **kw),
         )
 
+    async def create_payee(self, payee: dict, plan_id: str) -> Payee:
+        p = await self.client.create_payee(payee, plan_id)
+        await self.delta.invalidate_knowledge(plan_id, ENDPOINT_PAYEES)
+        return p
+
     async def get_payee(self, payee_id: str, plan_id: str) -> Payee:
         payees = await self.get_payees(plan_id)
         for p in payees:

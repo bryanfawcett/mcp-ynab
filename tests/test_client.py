@@ -270,6 +270,20 @@ class TestGetPayees:
         assert payees[0].name == "Amazon"
 
 
+class TestCreatePayee:
+    @pytest.mark.asyncio
+    async def test_creates_payee(self, client):
+        data = {"data": {"payee": {"id": "p2", "name": "Costco"}}}
+        client._client = AsyncMock()
+        client._client.post = AsyncMock(return_value=_mock_response(data))
+
+        payee = await client.create_payee({"name": "Costco"}, "b1")
+        assert payee.name == "Costco"
+
+        post_call = client._client.post.call_args
+        assert post_call[1]["json"] == {"payee": {"name": "Costco"}}
+
+
 # ── Months ────────────────────────────────────────────────────
 
 

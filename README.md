@@ -10,6 +10,7 @@ An MCP server that connects AI assistants to your [YNAB](https://www.ynab.com/) 
 - **Delta sync** — only fetches what changed since the last call (uses YNAB's server knowledge)
 - **4-tier caching** — TTL cache, delta sync, retry with backoff, SQLite persistence
 - **Search & analytics** — text search across transactions, per-category spending breakdowns, Sankey flow data
+- **Monthly reports with a live dashboard** — `get_monthly_report` returns income/spending summary, category and payee breakdowns, overspent categories, and a multi-month trend in one call. On hosts that support [MCP Apps](https://github.com/modelcontextprotocol/ext-apps) (Claude, ChatGPT), it renders as an interactive dashboard (KPI tiles, charts, tables) automatically — no separate artifact step needed. On other hosts, the same data comes back as plain JSON.
 - **Bulk operations** — create or update multiple transactions in a single call
 - **Dollar amounts** — accepts dollars in parameters, converts to YNAB milliunits internally
 
@@ -57,13 +58,13 @@ See [mcp-ynab.com](https://mcp-ynab.com) for config file locations and troublesh
 | **Plans** | `list_plans`, `get_plan`, `get_plan_settings` |
 | **Accounts** | `list_accounts`, `get_account`, `create_account` |
 | **Categories** | `list_categories`, `get_category`, `create_category`, `update_category`, `create_category_group`, `update_category_group`, `get_category_for_month`, `update_category_for_month` |
-| **Payees** | `list_payees`, `get_payee`, `update_payee` |
+| **Payees** | `list_payees`, `create_payee`, `get_payee`, `update_payee` |
 | **Payee Locations** | `list_payee_locations`, `get_payee_location`, `get_payee_locations_by_payee` |
 | **Months** | `list_months`, `get_month` |
 | **Money Movements** | `list_money_movements`, `get_money_movements_for_month`, `list_money_movement_groups`, `get_money_movement_groups_for_month` |
 | **Transactions** | `list_transactions`, `get_transaction`, `get_transactions_by_account`, `get_transactions_by_category`, `get_transactions_by_month`, `get_transactions_by_payee`, `search_transactions`, `create_transaction`, `create_transactions`, `update_transaction`, `update_transactions`, `delete_transaction`, `import_transactions` |
 | **Scheduled** | `list_scheduled_transactions`, `get_scheduled_transaction`, `create_scheduled_transaction`, `update_scheduled_transaction`, `delete_scheduled_transaction` |
-| **Analytics** | `get_money_flow`, `get_spending_by_category` |
+| **Analytics** | `get_money_flow`, `get_spending_by_category`, `get_monthly_report` |
 
 ### Field selection
 

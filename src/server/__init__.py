@@ -16,7 +16,7 @@ from src.server.categories import (
     create_category_group, update_category_group,
     get_category_for_month, update_category_for_month,
 )
-from src.server.payees import list_payees, get_payee, update_payee
+from src.server.payees import list_payees, create_payee, get_payee, update_payee
 from src.server.payee_locations import (
     list_payee_locations, get_payee_location, get_payee_locations_by_payee,
 )
@@ -30,7 +30,7 @@ from src.server.scheduled import (
     create_scheduled_transaction, update_scheduled_transaction,
     delete_scheduled_transaction,
 )
-from src.server.analytics import get_money_flow, get_spending_by_category
+from src.server.analytics import get_money_flow, get_spending_by_category, get_monthly_report
 
 __all__ = [
     "get_user",
@@ -44,7 +44,7 @@ __all__ = [
     "list_categories", "get_category", "create_category", "update_category",
     "create_category_group", "update_category_group",
     "get_category_for_month", "update_category_for_month",
-    "list_payees", "get_payee", "update_payee",
+    "list_payees", "create_payee", "get_payee", "update_payee",
     "list_payee_locations", "get_payee_location", "get_payee_locations_by_payee",
     "list_money_movements", "get_money_movements_for_month",
     "list_money_movement_groups", "get_money_movement_groups_for_month",
@@ -52,7 +52,7 @@ __all__ = [
     "list_scheduled_transactions", "get_scheduled_transaction",
     "create_scheduled_transaction", "update_scheduled_transaction",
     "delete_scheduled_transaction",
-    "get_money_flow", "get_spending_by_category",
+    "get_money_flow", "get_spending_by_category", "get_monthly_report",
     "main",
 ]
 
