@@ -1,6 +1,10 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import Breadcrumb from "@bundu/ui/Breadcrumb.astro";
+import { deriveBreadcrumbs } from "@bundu/ui";
 import { ROADMAP, REPO, type TaskStatus, type TaskRef } from "../data/roadmap.ts";
+
+const crumbs = deriveBreadcrumbs(Astro.url.pathname, {}, "Home");
 
 const STATUS_LABEL: Record<TaskStatus, string> = {
   done: "Done",
@@ -26,13 +30,7 @@ function refLabel(ref: TaskRef): string {
   title="Project — Nyuchi MCP for YNAB"
   description="What's shipped, in progress, and blocked for Nyuchi MCP for YNAB — built in the open, with every task linked to its PR or issue."
 >
-  <nav aria-label="Breadcrumb" style="font-size:.82rem; margin-bottom:1.5rem;">
-    <ol style="list-style:none; display:flex; gap:.5rem; margin:0; padding:0; color:var(--text-secondary);">
-      <li><a href="/">Home</a></li>
-      <li aria-hidden="true">/</li>
-      <li aria-current="page" style="color:var(--text-primary);">Project</li>
-    </ol>
-  </nav>
+  <Breadcrumb items={crumbs} origin={Astro.site?.toString()} class="mb-6" />
 
   <p class="eyebrow">Nyuchi MCP for YNAB &middot; Project Dashboard</p>
   <h1 class="board-title">Ship Board</h1>

@@ -1,6 +1,10 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import Breadcrumb from "@bundu/ui/Breadcrumb.astro";
+import { deriveBreadcrumbs } from "@bundu/ui";
 import { REPO } from "../data/roadmap.ts";
+
+const crumbs = deriveBreadcrumbs(Astro.url.pathname, {}, "Home");
 
 const TARGETS = [
   { key: "worker", title: "Worker", description: "The Cloudflare Worker fronting everything on ynab.nyuchi.com." },
@@ -13,13 +17,7 @@ const TARGETS = [
   title="Status — Nyuchi MCP for YNAB"
   description="Live uptime for the Worker, tools, YNAB API, and auth behind Nyuchi MCP for YNAB."
 >
-  <nav aria-label="Breadcrumb" style="font-size:.82rem; margin-bottom:1.5rem;">
-    <ol style="list-style:none; display:flex; gap:.5rem; margin:0; padding:0; color:var(--text-secondary);">
-      <li><a href="/">Home</a></li>
-      <li aria-hidden="true">/</li>
-      <li aria-current="page" style="color:var(--text-primary);">Status</li>
-    </ol>
-  </nav>
+  <Breadcrumb items={crumbs} origin={Astro.site?.toString()} class="mb-6" />
 
   <p class="eyebrow">Nyuchi MCP for YNAB &middot; Status</p>
   <h1 class="board-title">Status</h1>

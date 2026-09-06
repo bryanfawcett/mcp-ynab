@@ -1,0 +1,160 @@
+/* Global stylesheet for the ynab.nyuchi.com static site.
+ *
+ * Load order matters: Tailwind's own layers first, then the design
+ * system's canonical tokens/components/utilities, then this app's brand
+ * overlay, then this app's own remaining custom rules (things the shared
+ * library has no opinion on, or app-specific business-logic colors it
+ * shouldn't own — see the status-pill tokens below).
+ */
+@import "tailwindcss";
+
+/* @bundu/ui's theme extension (the seven-mineral color scale, fluid type
+   scale, radius/spacing tokens) ships as a v3-style JS preset rather than
+   a v4 `@theme` block. Tailwind v4 still loads a JS config — presets
+   included — via `@config`; see tailwind.config.mjs for why. */
+@config "../../tailwind.config.mjs";
+
+/* @bundu/ui's own Astro/React source (Hero.astro, Button.tsx, etc.) lives
+   in node_modules, which Tailwind v4's automatic content detection
+   excludes by default (same rules as .gitignore) — without this, none of
+   the library components' own utility classes (`container-custom`,
+   `font-serif`, `bg-primary`, `text-display`, …) would get generated. */
+@source "../../node_modules/@bundu/ui/src";
+
+@import "@bundu/ui/styles/globals.css";
+@import "@bundu/ui/styles/brand-nyuchi.css";
+
+/* @bundu/ui's dark-mode --muted-foreground (#a8a6a0) measures APCA Lc
+   ~53-54 against this app's dark background/card, short of the 60
+   minimum this project holds secondary/caption text to (see
+   scripts/check-contrast.mjs) — real WCAG-2 contrast is still fine
+   (~7.8:1), but APCA is the stricter, more accurate predictor for
+   light-text-on-dark and is what this project checks. Lightened here to
+   the nearest comfortably-passing shade, the same way brand-nyuchi.css
+   overrides --primary/--ring for this brand's palette choice — light
+   mode is untouched since the library's own light value already clears
+   the bar (Lc ~79-83). Every consumer of --muted-foreground (the
+   `text-muted-foreground` utility, this app's --text-secondary alias
+   below, and every @bundu/ui component that uses it internally) picks
+   this up automatically. */
+[data-theme="dark"] {
+  --muted-foreground: #bcb9b0;
+}
+
+:root {
+  /* --- Back-compat aliases -----------------------------------------
+     project.astro, status.astro and privacy-policy.astro each keep a
+     page-local <style> block untouched by this migration (see the
+     project's scope boundary — only their breadcrumb nav and outer page
+     chrome move onto the new components); those blocks still reference
+     these app-local names. Aliasing them to the library's real semantic
+     tokens means those pages pick up the library's actual resolved
+     colors automatically, in both themes, without hand-editing every
+     declaration in three files. --border, --radius-lg and --radius-full
+     need no alias at all: the library's tokens.css already defines
+     those exact custom-property names, so unmigrated CSS referencing
+     them already resolves to the real design-system values as-is. */
+  --color-accent: var(--primary);
+  --text-primary: var(--foreground);
+  --text-secondary: var(--muted-foreground);
+  --bg-surface: var(--card);
+  --bg-base: var(--background);
+
+  /* --- Typography ----------------------------------------------------
+     @bundu/ui's globals.css already hardcodes these same three families
+     (Noto Sans / Noto Serif / JetBrains Mono) in its own `@layer base`,
+     and tailwind-preset.mjs's `fontFamily.{sans,serif,mono}` match too —
+     Mzizi's typography tokens are shared across Nyuchi properties, so
+     nothing here fights the library. Kept as named vars only because
+     the unmigrated pages' own <style> blocks reference them by name;
+     new markup should prefer the `font-serif`/`font-sans`/`font-mono`
+     Tailwind utilities directly. */
+  --font-display: "Noto Serif", ui-serif, Georgia, serif;
+  --font-serif: "Noto Serif", ui-serif, Georgia, serif;
+  --font-sans: "Noto Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* No library equivalent — this app's own reading-width choice. */
+  --content-width: 1040px;
+
+  /* --- Status-pill tokens ---------------------------------------------
+     project.astro's Ship Board task pills and status.astro's uptime bars
+     use three app-specific business-logic colors (done / action-needed /
+     blocked) that the library has no concept of — these stay as this
+     app's own custom properties, layered alongside the library's tokens
+     rather than replaced by them, per the project's own instructions.
+     Values are derived from the library's semantic success/warning/error
+     tokens (and their closest `-container` background) rather than kept
+     as hand-picked hex: each already flips light/dark on its own via
+     tokens.css's `[data-theme="dark"]` block, so no separate dark-mode
+     override is needed here. `--status-blocked`/`-bg` land on almost the
+     exact original hex in both themes (the library's error/destructive-
+     container tokens happen to already match); `--status-action`/`-bg`
+     and `--status-done`/`-bg` land close to the originals — all three
+     re-verified against the same APCA bar in scripts/check-contrast.mjs. */
+  --status-done: var(--success);
+  --status-done-bg: var(--color-malachite-container);
+  --status-action: var(--warning);
+  --status-action-bg: var(--color-gold-container);
+  --status-blocked: var(--error);
+  --status-blocked-bg: var(--destructive-container);
+}
+
+/* Underlined by default: a link in running prose distinguishable only by
+   color fails WCAG's link-in-text-block (axe catches this) — text-only UI
+   links (nav, breadcrumbs, the brand wordmark, buttons) opt back out.
+   Wrapped in `@layer base` (matching the library's own globals.css, which
+   sets its base-element defaults the same way) rather than left unlayered
+   — CSS cascade layers always lose to unlayered rules regardless of
+   selector specificity, so an unlayered `a {}` here would silently beat
+   every `text-*` Tailwind utility (e.g. the header/footer nav links'
+   `text-muted-foreground`) instead of the other way around. */
+@layer base {
+  a {
+    color: var(--primary);
+    text-decoration: underline;
+    text-decoration-thickness: from-font;
+    text-underline-offset: 0.15em;
+  }
+  footer a,
+  nav a,
+  a[data-slot="button"] {
+    text-decoration: none;
+  }
+
+  /* Heading/prose defaults that project.astro, status.astro and
+     privacy-policy.astro relied on from this app's old global stylesheet
+     and still need — those three pages are intentionally left as-is apart
+     from their breadcrumb + outer chrome (see the project's scope
+     boundary), so rather than editing every bare <h1>/<h2>/<ul> in three
+     files, the shared defaults they already assumed live on here. The
+     library's own `@layer base` (in @bundu/ui's globals.css) already sets
+     h1-h6's font-family and color — this only fills the two things it
+     doesn't (weight, line-height) plus this app's own heading rhythm.
+     Tailwind's preflight (bundled with `@import "tailwindcss"` above)
+     zeroes out heading font-weight/line-height and list bullets/spacing,
+     which is why these can't be left to browser defaults post-migration. */
+  h1 {
+    font-weight: 700;
+    line-height: 1.1;
+  }
+  h2 {
+    font-weight: 600;
+    font-size: 1.5rem;
+    margin: 3rem 0 1rem;
+  }
+  .lede {
+    color: var(--muted-foreground);
+    font-size: 1.125rem;
+    max-width: 60ch;
+  }
+  /* Prose lists (privacy-policy.astro's plain <ul> bullet lists) —
+     `:not([class])` so lists that opt into their own layout (e.g.
+     project.astro's `ul.tasks`, index.astro's icon-marker feature list)
+     are unaffected. */
+  :where(ul, ol):not([class]) {
+    list-style: revert;
+    margin: revert;
+    padding: revert;
+  }
+}
