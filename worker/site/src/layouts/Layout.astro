@@ -129,6 +129,11 @@ const { title, description } = Astro.props;
   .card {
     background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
     padding: 1.5rem; margin: 1.5rem 0;
+    /* A wide table (e.g. index.astro's "Available tools") can't shrink below
+       its longest unbreakable <code> token — let it scroll within the card
+       on narrow viewports rather than forcing the whole page to scroll
+       horizontally. */
+    overflow-x: auto;
   }
   code, .mono { font: 0.9em/1.5 var(--font-mono); }
   .endpoint {

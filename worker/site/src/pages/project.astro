@@ -143,6 +143,14 @@ function refLabel(ref: TaskRef): string {
     .status-pill.status-action { color: var(--status-action); background: var(--status-action-bg); border-color: color-mix(in srgb, var(--status-action) 35%, transparent); }
     .status-pill.status-blocked { color: var(--status-blocked); background: var(--status-blocked-bg); border-color: color-mix(in srgb, var(--status-blocked) 35%, transparent); }
     .task-main { flex: 1; min-width: 0; }
+    /* Task copy is hand-written prose, but occasionally names an identifier
+       (e.g. "YNAB_OAUTH_CLIENT_ID/CLOUDFLARE_ACCOUNT_ID") with no spaces for
+       the browser to wrap at. .task-main already shrinks to fit (min-width:
+       0) alongside the fixed-width status pill and ref badge, so on a
+       narrow card that single unbroken token can be wider than the whole
+       page -- forcing it (and only it) to wrap mid-word is what keeps the
+       page itself from scrolling horizontally. */
+    .task-title, .task-body { overflow-wrap: anywhere; }
     .task-title { font-weight: 600; font-size: .95rem; }
     .task-body { color: var(--text-secondary); font-size: .87rem; margin-top: .25rem; }
     .ref-badge {

@@ -62,13 +62,23 @@ const TARGETS = [
     }
     .uptime-title { font-weight: 600; margin-bottom: .2rem; }
     .uptime-desc { color: var(--text-secondary); font-size: .85rem; max-width: 40ch; }
-    .uptime-right { display: flex; flex-direction: column; align-items: flex-end; gap: .35rem; }
-    .uptime-bars { display: flex; align-items: flex-end; gap: 2px; height: 28px; }
-    .uptime-bars .bar { width: 4px; height: 100%; border-radius: 2px; background: var(--border); cursor: default; }
-    .uptime-bars .bar.up { background: var(--status-done); }
-    .uptime-bars .bar.down { background: var(--status-blocked); }
+    .uptime-right { display: flex; flex-direction: column; align-items: flex-end; gap: .35rem; min-width: 0; max-width: 100%; }
+    /* Scrolls internally rather than pushing the card (and the page) wider
+       than the viewport -- up to 288 ticks (one per 10-minute check, 48
+       hours of history) is comfortably wider than a phone screen. */
+    .uptime-bars { display: flex; align-items: flex-end; gap: 2px; height: 28px; max-width: 100%; overflow-x: auto; }
+    /* :global() is required here, not just style: the .bar/.uptime-empty
+       elements are created by the <script> below at runtime via
+       document.createElement, so they never receive the data-astro-cid-*
+       attribute Astro stamps onto statically-rendered markup to scope this
+       page's CSS -- a plain (scoped) `.uptime-bars .bar` rule silently never
+       matches them, and the ticks render as invisible 0x0 boxes on every
+       viewport. */
+    .uptime-bars :global(.bar) { width: 4px; flex: none; height: 100%; border-radius: 2px; background: var(--border); cursor: default; }
+    .uptime-bars :global(.bar.up) { background: var(--status-done); }
+    .uptime-bars :global(.bar.down) { background: var(--status-blocked); }
     .uptime-pct { font-size: .78rem; color: var(--text-secondary); font-family: var(--font-mono); }
-    .uptime-empty { color: var(--text-secondary); font-size: .8rem; font-style: italic; }
+    :global(.uptime-empty) { color: var(--text-secondary); font-size: .8rem; font-style: italic; }
   </style>
 
   <script define:vars={{ REPO, targets: TARGETS.map((t) => t.key) }}>
@@ -92,6 +102,12 @@ const TARGETS = [
         }
         const upCount = history.filter((e) => e.up).length;
         pctEl.textContent = `${((upCount / history.length) * 100).toFixed(1)}% up, last ${history.length} checks`;
+        // On viewports too narrow to fit every tick, .uptime-bars scrolls
+        // internally (rather than the page) -- default that scroll to the
+        // right so the most recent checks (the ones that matter, per the
+        // "most recent on the right" copy above) are visible without the
+        // visitor needing to know to scroll first.
+        barsEl.scrollLeft = barsEl.scrollWidth;
       } catch {
         barsEl.replaceChildren();
         const empty = document.createElement("div");
