@@ -19,17 +19,28 @@
       // multi-tenant mode, src/index.ts routes each caller to their own
       // container instance (keyed by their YNAB token) so tenants don't share
       // CPU/memory/cache and each sleeps independently — that needs room for
-      // more than one to run at once. 10 is a starting cap on concurrently
-      // *active* instances (idle ones still sleep per `sleepAfter` below,
-      // and Cloudflare's active-CPU pricing only bills used CPU) — raise it
-      // if usage grows past that many people using this at the same time.
-      "max_instances": 10
+      // more than one to run at once. 30 gives headroom for ~25 concurrent
+      // users without every one of them needing to be simultaneously active
+      // (idle ones still sleep per `sleepAfter` below, and Cloudflare's
+      // active-CPU pricing only bills used CPU). This is deploy-time config
+      // Wrangler pushes straight to Cloudflare's container API — our own
+      // Worker code never reads it, so it can't be sourced from a runtime
+      // env var; raise it here (and redeploy) if usage grows past this.
+      "max_instances": 30
     }
   ],
   "durable_objects": {
     "bindings": [{ "class_name": "YnabMcpContainer", "name": "YNAB_MCP_CONTAINER" }]
   },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["YnabMcpContainer"] }],
+
+  // Protects the container from a single caller hammering /mcp — keyed per
+  // caller (a hash of their presented token, same as the per-tenant container
+  // routing below) rather than per-IP, so one misbehaving tenant can't burn
+  // through another's quota and legitimate shared-IP traffic isn't punished.
+  // 100 requests/60s comfortably covers normal tool-calling traffic (each MCP
+  // tool call is one request) while still capping a runaway client/retry loop.
+  "ratelimits": [{ "name": "MCP_RATE_LIMITER", "namespace_id": "1001", "simple": { "limit": 100, "period": 60 } }],
 
   // The landing page and privacy policy (worker/site, an Astro static site)
   // built to worker/site/dist — `npm run build:site` (package.json) builds
