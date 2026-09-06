@@ -41,6 +41,15 @@ class YNABClient:
             timeout=timeout,
         )
 
+    async def close(self) -> None:
+        """Release the underlying connection pool.
+
+        Only needed where clients are created dynamically and discarded, e.g.
+        evicting a tenant in multi-tenant mode (src/server/http.py) — the
+        single process-lifetime client built from YNAB_API_KEY never needs it.
+        """
+        await self._client.aclose()
+
     def _handle_error(self, response: httpx.Response) -> None:
         """Parse YNAB error response and raise a descriptive exception."""
         try:

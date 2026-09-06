@@ -152,13 +152,22 @@ export const LANDING_PAGE_HTML = `<!doctype html>
   <h2>Connecting</h2>
   <div class="card">
     <p style="margin:0 0 1rem;">
-      This is a private, single-user instance — every request needs a bearer token.
+      Every request needs a bearer token — and here, that token is your own
+      <a href="https://app.ynab.com/settings/developer" target="_blank" rel="noopener">YNAB personal access token</a>,
+      not a password for this site. It's used only to make YNAB API calls on your behalf, for
+      that request; nobody else's budget is visible to you and yours isn't visible to them.
+    </p>
+    <p style="margin:0 0 1rem;">
       In Claude web (<b>Settings → Connectors → Add custom connector</b>), use the
-      MCP endpoint above with <code>?token=&lt;token&gt;</code> appended; clients that support
-      custom headers can send <code>Authorization: Bearer &lt;token&gt;</code> instead.
+      MCP endpoint above with <code>?token=&lt;your-YNAB-token&gt;</code> appended; clients that
+      support custom headers can send <code>Authorization: Bearer &lt;your-YNAB-token&gt;</code>
+      instead.
     </p>
     <p style="margin:0;">
-      Running the open-source server yourself instead? See
+      Running the open-source server yourself instead — for just you, or for others under
+      your own domain? See
+      <a href="https://github.com/bryanfawcett/mcp-ynab" target="_blank" rel="noopener">this fork</a>'s
+      README for the Cloudflare deployment, or
       <a href="https://mcp-ynab.com" target="_blank" rel="noopener">mcp-ynab.com</a> for the local
       stdio setup (Claude Desktop, Claude Code, ChatGPT).
     </p>

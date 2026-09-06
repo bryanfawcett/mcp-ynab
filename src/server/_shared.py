@@ -1,3 +1,4 @@
+import contextvars
 import json
 import sys
 from functools import wraps
@@ -7,7 +8,7 @@ from mcp.server.mcpserver import MCPServer
 
 from src.cache.service import CacheService
 from src.config import Settings
-from src.db.engine import init_db
+from src.db.engine import current_db_path, init_db, reset_db_path, use_db_path
 from src.models.account import ACCOUNT_DEFAULT_EXCLUDE, Account
 from src.models.category import (
     CATEGORY_DEFAULT_EXCLUDE,
@@ -48,11 +49,85 @@ except Exception as e:
     print(f"ERROR: {e}", file=sys.stderr)
     sys.exit(1)
 
-mcp = MCPServer("ynab")
-client = YNABClient(settings.ynab_api_key, timeout=settings.http_timeout)
-cache = CacheService(client, settings)
+if not settings.multi_tenant and not settings.ynab_api_key:
+    print(
+        "ERROR: YNAB_API_KEY is required unless MCP_MULTI_TENANT is set.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
 
-_db_initialized = False
+mcp = MCPServer("ynab")
+
+# In multi-tenant mode (src/server/http.py), every tool call is made on behalf
+# of whichever caller's YNAB token the current request is scoped to, not one
+# fixed account — so `client`/`cache` below are proxies that resolve to that
+# request's own instances via contextvars, falling back to the single
+# process-wide instances (built from YNAB_API_KEY) that stdio mode and
+# single-tenant HTTP deployments use unconditionally.
+_tenant_client: contextvars.ContextVar["YNABClient | None"] = contextvars.ContextVar(
+    "tenant_client", default=None
+)
+_tenant_cache: contextvars.ContextVar["CacheService | None"] = contextvars.ContextVar(
+    "tenant_cache", default=None
+)
+
+_default_client = YNABClient(settings.ynab_api_key, timeout=settings.http_timeout) if settings.ynab_api_key else None
+_default_cache = CacheService(_default_client, settings) if _default_client else None
+
+
+class _TenantProxy:
+    """Delegates attribute access to the current request's tenant instance.
+
+    Every tool module does `_shared.client.foo()` / `_shared.cache.foo()` as a
+    fresh attribute lookup on each call, so swapping what these two names
+    resolve to per-request (via contextvars, which are asyncio-task-local) is
+    enough to make every existing tool multi-tenant-safe with no changes to
+    the ~15 tool modules themselves.
+    """
+
+    def __init__(self, ctx_var: "contextvars.ContextVar", default):
+        object.__setattr__(self, "_ctx_var", ctx_var)
+        object.__setattr__(self, "_default", default)
+
+    def __getattr__(self, name):
+        current = self._ctx_var.get()
+        instance = current if current is not None else self._default
+        if instance is None:
+            raise RuntimeError(
+                "No YNAB client for this request. In multi-tenant mode this means "
+                "the request wasn't authenticated with a tenant token before reaching "
+                "the tool — check src/server/http.py's middleware."
+            )
+        return getattr(instance, name)
+
+
+client = _TenantProxy(_tenant_client, _default_client)
+cache = _TenantProxy(_tenant_cache, _default_cache)
+
+
+def activate_tenant(
+    tenant_client: YNABClient, tenant_cache: CacheService, db_path: str
+) -> tuple[contextvars.Token, contextvars.Token, contextvars.Token]:
+    """Scope `client`/`cache`/the SQLite cache DB to one tenant for this task.
+
+    Used by src/server/http.py's multi-tenant middleware, once per request.
+    Returns the tokens needed to undo it via deactivate_tenant — always in a
+    `finally`, since these contextvars are asyncio-task-local and leaking a
+    stale value would only affect this one request's task, but should still
+    be cleaned up.
+    """
+    return (
+        _tenant_client.set(tenant_client),
+        _tenant_cache.set(tenant_cache),
+        use_db_path(db_path),
+    )
+
+
+def deactivate_tenant(tokens: tuple[contextvars.Token, contextvars.Token, contextvars.Token]) -> None:
+    client_token, cache_token, db_token = tokens
+    _tenant_client.reset(client_token)
+    _tenant_cache.reset(cache_token)
+    reset_db_path(db_token)
 
 
 # Default exclude sets per model. Used when a tool is called without an explicit
@@ -147,10 +222,10 @@ def serialize_list(models, *, exclude_fields: list[str] | None = None) -> str:
 
 
 async def _ensure_db():
-    global _db_initialized
-    if not _db_initialized:
-        await init_db(settings.cache_db_path)
-        _db_initialized = True
+    # init_db is idempotent per path (a plain dict lookup after the first
+    # call), so no separate "already initialized" flag is needed here — and
+    # per-request paths (multi-tenant mode) couldn't share one anyway.
+    await init_db(current_db_path() or settings.cache_db_path)
 
 
 def handle_errors(func):
