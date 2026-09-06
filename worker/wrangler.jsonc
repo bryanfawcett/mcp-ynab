@@ -46,5 +46,24 @@
   // to serve anything else, switch this to a scoped Route instead
   // (`{ "pattern": "ynab.nyuchi.com/mcp*", "zone_name": "nyuchi.com" }`),
   // which requires its own proxied DNS record already at that hostname.
-  "routes": [{ "pattern": "ynab.nyuchi.com", "custom_domain": true }]
+  "routes": [{ "pattern": "ynab.nyuchi.com", "custom_domain": true }],
+
+  // Enabled in the dashboard (Settings -> Observability); mirrored here so a
+  // future `wrangler deploy`/Workers Builds run doesn't silently reset it to
+  // the default (disabled). head_sampling_rate: 1 means every request's logs
+  // and traces are captured, not sampled — fine at this deployment's current
+  // volume; revisit if usage grows enough that log volume/cost matters.
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "invocation_logs": true,
+      "persist": true
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "persist": true
+    }
+  }
 }
