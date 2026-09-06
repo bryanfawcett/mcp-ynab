@@ -188,7 +188,23 @@ def create_app() -> Starlette:
     # (allowing only localhost) when host is 127.0.0.1/localhost/::1, which is
     # wrong once the server is reachable over the network via a container/Worker
     # rather than loopback. The auth layer below is the real access control here.
-    app = mcp.streamable_http_app(streamable_http_path=MCP_PATH, host="0.0.0.0")
+    #
+    # stateless_http=True: in the SDK's default *stateful* mode, the first
+    # request to a session spawns a long-lived task that serves every later
+    # request carrying that Mcp-Session-Id, and that task permanently captures
+    # whichever contextvars (see _shared.py's activate_tenant/_TenantProxy)
+    # were active on the *creating* request. In single-tenant mode that's
+    # harmless (one shared client either way), but in multi-tenant mode it
+    # means every later request for that session runs tool calls as whichever
+    # caller happened to create it — regardless of the token *that* request
+    # presents. The SDK has a same-credential guard for this, but it keys off
+    # `scope["user"]` being an `AuthenticatedUser` set by the SDK's own OAuth
+    # middleware, which this app doesn't use, so the guard is always a no-op
+    # here. stateless_http=True sidesteps the whole issue: every request gets
+    # its own fresh transport/task, so it always runs under its own request's
+    # contextvars — confirmed with a live client (init + a separate tools/list
+    # call both succeed with no session continuity needed).
+    app = mcp.streamable_http_app(streamable_http_path=MCP_PATH, host="0.0.0.0", stateless_http=True)
     app.router.routes.append(Route("/health", _health))
 
     if settings.multi_tenant:

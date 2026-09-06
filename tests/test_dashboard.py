@@ -31,7 +31,7 @@ async def test_dashboard_resource_content():
     assert "@modelcontextprotocol/ext-apps" in content
     assert "chart.js" in content
     assert "ontoolresult" in content
-    assert "--color-accent: #FF8A65" in content  # Bundu copper mineral (dark)
+    assert "--color-accent: #FFD740" in content  # Nyuchi gold mineral (dark)
 
 
 @pytest.mark.asyncio

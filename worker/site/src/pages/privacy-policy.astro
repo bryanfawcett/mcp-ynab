@@ -1,0 +1,85 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+<Layout
+  title="Privacy Policy — Nyuchi MCP for YNAB"
+  description="How Nyuchi MCP for YNAB handles the YNAB data it accesses on your behalf."
+>
+  <h1 style="text-transform:none; font-size:clamp(2rem, 3vw + 1.2rem, 3.25rem);">Privacy Policy</h1>
+  <p style="color:var(--text-secondary); font-size:.85rem; margin:0 0 3rem;">Last updated: September 6, 2026</p>
+
+  <p>
+    Nyuchi MCP for YNAB ("this service") is a Model Context Protocol (MCP) server that connects
+    an AI assistant you already use — Claude, ChatGPT, or another MCP-compatible client — to your
+    own <a href="https://www.ynab.com/" target="_blank" rel="noopener">YNAB</a> budget, so that
+    assistant can answer questions about your budget and make changes you ask it to make (adding
+    transactions, adjusting categories, reconciling accounts, and similar). This is the only
+    purpose your data is used for.
+  </p>
+
+  <h2>What data this service accesses</h2>
+  <p>
+    Once you connect your YNAB account, this service can access whatever your YNAB account
+    itself has access to via the YNAB API: budgets, accounts, categories, payees, transactions,
+    and scheduled transactions. It does not access anything about you outside of YNAB, and it
+    does not access other people's YNAB data.
+  </p>
+
+  <h2>How your data is handled, stored, and secured</h2>
+  <div class="card">
+    <ul>
+      <li><b>Authorization:</b> connecting your YNAB account uses YNAB's own OAuth login — you
+        authenticate directly with YNAB, and this service never sees or stores your YNAB
+        password. YNAB issues this service a token scoped to your account, which is stored
+        encrypted at rest and used only to make YNAB API calls triggered by your own requests
+        to your AI assistant.</li>
+      <li><b>Cached budget data:</b> to respond quickly and avoid unnecessary calls to YNAB, this
+        service keeps a temporary local cache of your budget data (accounts, categories,
+        transactions, and similar) for your account only. This cache is rebuilt automatically
+        from YNAB and is not shared with any other user of this service.</li>
+      <li><b>Retention:</b> your access token and cache are retained for as long as your
+        connection to this service is active. If this service has not been used for an extended
+        period, its underlying infrastructure may reclaim idle resources, which clears the cache
+        (it simply rebuilds from YNAB on your next request); your access token is retained until
+        you disconnect the service, revoke access from your YNAB account settings, or request
+        deletion as described below.</li>
+      <li><b>Security:</b> this service runs on Cloudflare's infrastructure, with your access
+        token stored encrypted at rest and transmitted only over HTTPS. Access to the
+        infrastructure operating this service is limited to its operator.</li>
+    </ul>
+  </div>
+
+  <h2>This service does not sell or share your data</h2>
+  <p>
+    Your YNAB data is never sold, rented, or knowingly passed to any third party, except:
+    the AI assistant you yourself are using to make the request (since showing you your own
+    budget data, at your own request, through that assistant is the entire function of this
+    service), and Cloudflare, as the infrastructure provider hosting this service (Cloudflare
+    does not use this data for any purpose of its own). This service does not use your budget
+    data for advertising, analytics products, or any purpose beyond answering the requests you
+    make through your AI assistant.
+  </p>
+
+  <h2>Deleting your data</h2>
+  <p>
+    You can disconnect this service at any time from your
+    <a href="https://app.ynab.com/settings/security" target="_blank" rel="noopener">YNAB account security settings</a>,
+    which immediately revokes its access. To additionally request deletion of any cached data or
+    stored access token held by this service, email
+    <a href="mailto:privacy@nyuchi.com">privacy@nyuchi.com</a> — requests are honored within a
+    reasonable time, and in any event this data is of no further use to this service once access
+    is revoked.
+  </p>
+
+  <h2>Changes to this policy</h2>
+  <p>
+    If this service starts accessing a new type of data or using your data in a new way, this
+    policy will be updated first (with the "Last updated" date above reflecting the change), and
+    you will be asked to re-consent before that new access or use takes effect.
+  </p>
+
+  <footer>
+    <a href="/">Nyuchi MCP for YNAB</a> — an independent, unofficial integration. Not affiliated
+    with or endorsed by YNAB.
+  </footer>
+</Layout>

@@ -1,0 +1,105 @@
+---
+// Shared head + brand tokens for every page. Colors/radii are Nyuchi's own
+// Mzizi tokens (mzizi_get_tokens family=ecosystem/minerals) — gold
+// (#FFD740 dark / #5D4037 light), not Bundu's copper: this is specifically
+// a Nyuchi product (the "infrastructure & enterprise" pillar), not a
+// generic cross-ecosystem one. Typography still matches bryanfawcett.com's
+// original type system (Cormorant Garamond display, IBM Plex Serif body,
+// IBM Plex Mono code) since that's this project's established look.
+interface Props {
+  title: string;
+  description: string;
+}
+const { title, description } = Astro.props;
+const FAVICON =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23FFD740'/%3E%3Ctext x='32' y='41' font-family='system-ui, sans-serif' font-weight='700' font-size='23' fill='%235D4037' text-anchor='middle'%3E4C%3C/text%3E%3C/svg%3E";
+---
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{title}</title>
+<meta name="description" content={description}>
+<link rel="icon" type="image/svg+xml" href={FAVICON}>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Serif:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --font-display: "Cormorant Garamond", ui-serif, Georgia, serif;
+    --font-serif: "IBM Plex Serif", ui-serif, Georgia, serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+
+    /* Nyuchi's own ecosystem mineral (gold/honey) — not Bundu's copper. */
+    --color-accent: #FFD740;
+    --bg-base: #0E0D0C;
+    --bg-surface: #131211;
+    --bg-raised: #2E2C29;
+    --border: #2A2927;
+    --text-primary: #F3F3F1;
+    --text-secondary: #A09C93;
+
+    --radius-lg: 14px;
+    --radius-full: 9999px;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme]) {
+      --color-accent: #5D4037;
+      --bg-base: #F3F3F1;
+      --bg-surface: #EEEEEC;
+      --bg-raised: #D6D5D1;
+      --border: #E7E5E0;
+      --text-primary: #1A1918;
+      --text-secondary: #55514B;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg-base); color: var(--text-primary); font: 16px/1.6 var(--font-serif); }
+  main { max-width: 760px; margin: 0 auto; padding: 4rem 1.5rem 5rem; }
+  .badge {
+    display: inline-flex; align-items: center; gap: .5rem;
+    padding: .3rem .75rem; border: 1px solid var(--border); border-radius: var(--radius-full);
+    font-size: .75rem; color: var(--text-secondary); margin-bottom: 2rem;
+  }
+  .badge .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-accent); }
+  h1 {
+    font-family: var(--font-display); font-weight: 700;
+    text-transform: uppercase; letter-spacing: .01em;
+    font-size: clamp(2.75rem, 4vw + 1.5rem, 5.5rem);
+    line-height: .95; margin: 0 0 1rem;
+  }
+  h1 span { color: var(--color-accent); }
+  p.lede { color: var(--text-secondary); font-size: 1.125rem; max-width: 60ch; margin: 0 0 2.5rem; }
+  h2 { font-family: var(--font-serif); font-weight: 600; font-size: 1.5rem; margin: 3rem 0 1rem; }
+  .card {
+    background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    padding: 1.5rem; margin: 1.5rem 0;
+  }
+  code, .mono { font: 0.9em/1.5 var(--font-mono); }
+  .endpoint {
+    display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;
+    background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    padding: 1rem 1.25rem; margin-bottom: 2.5rem;
+  }
+  .endpoint code { color: var(--color-accent); font-size: .95rem; }
+  ul.features { list-style: none; margin: 0; padding: 0; display: grid; gap: .9rem; }
+  ul.features li { padding-left: 1.4rem; position: relative; }
+  ul.features li::before { content: "→"; position: absolute; left: 0; color: var(--color-accent); }
+  ul.features b { color: var(--text-primary); }
+  table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+  th, td { text-align: left; padding: .6rem .75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--text-secondary); font-weight: 500; width: 9rem; }
+  td code { color: var(--color-accent); }
+  a { color: var(--color-accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  footer { margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--border); color: var(--text-secondary); font-size: .85rem; }
+  footer a { color: var(--text-secondary); }
+</style>
+</head>
+<body>
+<main>
+  <slot />
+</main>
+</body>
+</html>

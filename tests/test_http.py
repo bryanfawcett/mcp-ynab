@@ -207,3 +207,53 @@ async def test_tenant_registry_evicts_oldest_beyond_cap(tmp_path, monkeypatch):
     # token-1 was the oldest and should have been evicted (and its client closed).
     assert registry._tenant_id("token-1") not in registry._entries
     assert client_1._client.is_closed
+
+
+# ── Stateless transport (cross-tenant session-hijack regression) ────────────
+#
+# The SDK's default *stateful* streamable-HTTP mode spawns one long-lived task
+# per Mcp-Session-Id on the request that creates it, and every later request
+# carrying that session id is funneled into that same task — which keeps
+# running under whichever tenant's contextvars (src/server/_shared.py's
+# activate_tenant) were active when it was *created*, regardless of what
+# token a later request presents. The SDK's own same-credential guard for
+# this never fires here (it keys off `scope["user"]`, which this app's
+# custom auth middleware never sets). create_app() sets stateless_http=True
+# specifically to avoid this: every request gets a fresh transport/task, so
+# tool calls always run under that request's own contextvars.
+
+
+def test_create_app_uses_stateless_http_transport(multi_tenant_app):
+    # Asserts the fix directly: the fixture already called create_app(), which
+    # sets this on the shared MCPServer's lowlevel server as a side effect —
+    # the SDK only avoids the shared-task/session model when this is True.
+    from src.server._shared import mcp
+
+    assert mcp._lowlevel_server._session_manager.stateless is True
+
+
+def test_multi_tenant_ignores_a_reused_session_id_across_tokens(multi_tenant_app):
+    # Behavioral evidence for the same fix, independent of SDK internals: in
+    # stateless mode, Mcp-Session-Id is never tracked, so presenting one
+    # arbitrary/reused value across two different tokens is simply ignored —
+    # neither request is treated as "belonging" to a session created by the
+    # other. (A stateful server would 404 the second call with "Session not
+    # found" for an Mcp-Session-Id it never issued — the divergent, unsafe
+    # case is a stateful server silently *accepting* one it did issue for a
+    # different token, which this test's setup can't provoke directly, but a
+    # regression back to stateful mode would immediately fail this 404-avoidance
+    # check because a real client always gets a session id from `initialize`,
+    # never invents one.)
+    fake_session_id = "attacker-supplied-session-id"
+    with TestClient(multi_tenant_app) as client:
+        for token in ("tenant-a-token", "tenant-b-token"):
+            response = client.post(
+                "/mcp",
+                json=_init_request(),
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Accept": "application/json, text/event-stream",
+                    "Mcp-Session-Id": fake_session_id,
+                },
+            )
+            assert response.status_code == 200

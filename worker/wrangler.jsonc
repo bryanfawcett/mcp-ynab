@@ -31,12 +31,39 @@
   },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["YnabMcpContainer"] }],
 
-  // budget.bryanfawcett.com is dedicated to this MCP server, so it's a Custom
-  // Domain (this Worker is the origin for the whole hostname, all paths) —
-  // Cloudflare manages the DNS record and certificate automatically. If this
-  // subdomain ever needs to serve anything besides /mcp and /health, switch
-  // this to a scoped Route instead (`{ "pattern": "budget.bryanfawcett.com/mcp*",
-  // "zone_name": "bryanfawcett.com" }`), which requires its own proxied DNS
-  // record already at that hostname.
-  "routes": [{ "pattern": "budget.bryanfawcett.com", "custom_domain": true }]
+  // The landing page and privacy policy (worker/site, an Astro static site)
+  // built to worker/site/dist — `npm run build:site` (package.json) builds
+  // it; wrangler bundles whatever's in this directory at deploy time. A
+  // request matching a file here is served directly, without ever invoking
+  // src/index.ts's fetch handler (so it never wakes the container); anything
+  // that doesn't match (/mcp, /health) falls through to the Worker as usual.
+  "assets": { "directory": "./site/dist", "binding": "ASSETS" },
+
+  // ynab.nyuchi.com is dedicated to this Worker (this MCP server plus its
+  // landing/privacy-policy site), so it's a Custom Domain (this Worker is
+  // the origin for the whole hostname, all paths) — Cloudflare manages the
+  // DNS record and certificate automatically. If this subdomain ever needs
+  // to serve anything else, switch this to a scoped Route instead
+  // (`{ "pattern": "ynab.nyuchi.com/mcp*", "zone_name": "nyuchi.com" }`),
+  // which requires its own proxied DNS record already at that hostname.
+  "routes": [{ "pattern": "ynab.nyuchi.com", "custom_domain": true }],
+
+  // Enabled in the dashboard (Settings -> Observability); mirrored here so a
+  // future `wrangler deploy`/Workers Builds run doesn't silently reset it to
+  // the default (disabled). head_sampling_rate: 1 means every request's logs
+  // and traces are captured, not sampled — fine at this deployment's current
+  // volume; revisit if usage grows enough that log volume/cost matters.
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "invocation_logs": true,
+      "persist": true
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "persist": true
+    }
+  }
 }
