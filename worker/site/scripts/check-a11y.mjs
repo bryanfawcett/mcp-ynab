@@ -8,36 +8,52 @@
 import { chromium } from "playwright";
 import AxeBuilder from "@axe-core/playwright";
 import { createServer } from "node:http";
-import { readFile } from "node:fs/promises";
-import { extname, join, resolve, sep } from "node:path";
+import { readFile, readdir } from "node:fs/promises";
+import { extname, join, relative as relativePath, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const DIST = fileURLToPath(new URL("../dist", import.meta.url));
 const PAGES = ["/", "/project", "/privacy-policy"];
 const MIME = { ".html": "text/html", ".css": "text/css", ".js": "application/javascript", ".svg": "image/svg+xml" };
 
-// This only ever serves our own build output to our own Playwright requests
-// (PAGES above is the fixed, hardcoded request list — nothing here reads a
-// path from an external caller), but resolve+contain the request path
-// against `root` anyway rather than joining it in unguarded: `req.url` is
-// still attacker-shaped input as far as static analysis is concerned, and
-// the fix is one cheap check, not a real cost to this script's job.
-function serveStatic(root) {
+// Builds a URL-path -> absolute-file-path map by walking `root` once, using
+// only the trusted filesystem listing -- never a path built from a request.
+// The request handler below does a plain Map lookup, so no request-derived
+// value ever reaches a filesystem call; a request for anything not already
+// in the manifest just 404s.
+async function buildManifest(root) {
+  const manifest = new Map();
+  async function walk(dir) {
+    for (const entry of await readdir(dir, { withFileTypes: true })) {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        await walk(full);
+        continue;
+      }
+      const urlPath = "/" + relativePath(root, full).split(sep).join("/");
+      manifest.set(urlPath, full);
+      if (entry.name === "index.html") {
+        manifest.set(urlPath.slice(0, -"index.html".length) || "/", full);
+        manifest.set(urlPath.slice(0, -"/index.html".length) || "/", full);
+      }
+    }
+  }
+  await walk(root);
+  return manifest;
+}
+
+function serveStatic(manifest) {
   return createServer(async (req, res) => {
     const requestPath = decodeURIComponent((req.url || "/").split("?")[0]);
-    let relative = requestPath === "/" ? "/index.html" : requestPath;
-    if (!extname(relative)) relative = `${relative}/index.html`;
-
-    const resolved = resolve(join(root, relative));
-    if (resolved !== root && !resolved.startsWith(root + sep)) {
-      res.writeHead(400);
-      res.end("Bad request");
+    const file = manifest.get(requestPath);
+    if (!file) {
+      res.writeHead(404);
+      res.end("Not found");
       return;
     }
-
     try {
-      const body = await readFile(resolved);
-      res.writeHead(200, { "content-type": MIME[extname(resolved)] || "application/octet-stream" });
+      const body = await readFile(file);
+      res.writeHead(200, { "content-type": MIME[extname(file)] || "application/octet-stream" });
       res.end(body);
     } catch {
       res.writeHead(404);
@@ -47,7 +63,8 @@ function serveStatic(root) {
 }
 
 async function main() {
-  const server = serveStatic(DIST);
+  const manifest = await buildManifest(DIST);
+  const server = serveStatic(manifest);
   await new Promise((resolve) => server.listen(0, resolve));
   const { port } = server.address();
   const base = `http://localhost:${port}`;
