@@ -484,6 +484,17 @@ class TestListPayees:
         assert result[0]["name"] == "Amazon"
 
 
+class TestCreatePayee:
+    @pytest.mark.asyncio
+    async def test_creates_payee(self, mock_cache):
+        from src.server import create_payee
+
+        mock_cache.create_payee = AsyncMock(return_value=_make_payee(id="pay-2", name="Costco"))
+        result = json.loads(await create_payee(plan_id="bud-1", name="Costco"))
+        assert result["name"] == "Costco"
+        mock_cache.create_payee.assert_awaited_once_with({"name": "Costco"}, "bud-1")
+
+
 # ── Month Tools ───────────────────────────────────────────────
 
 
@@ -785,6 +796,98 @@ class TestGetSpendingByCategory:
         result = json.loads(await get_spending_by_category(plan_id="bud-1"))
         assert result["month"] != "current"
         assert len(result["month"]) == 10
+
+
+# ── Monthly Report ────────────────────────────────────────────
+
+
+class TestGetMonthlyReport:
+    @pytest.mark.asyncio
+    async def test_full_report(self, mock_cache):
+        from src.server import get_monthly_report
+
+        cats = [
+            _make_category(
+                name="Rent", category_group_name="Housing",
+                activity=-1500000, budgeted=1500000, balance=0,
+            ),
+            _make_category(
+                name="Food", category_group_name="Groceries",
+                activity=-700000, budgeted=600000, balance=-100000,
+            ),
+        ]
+        mock_cache.get_month = AsyncMock(
+            return_value=_make_month_detail(income=3000000, categories=cats, age_of_money=15)
+        )
+        mock_cache.get_transactions_by_month = AsyncMock(return_value=[
+            _make_transaction(payee_name="Landlord", amount=-1500000),
+            _make_transaction(id="txn-2", payee_name="Grocer", amount=-400000),
+            _make_transaction(id="txn-3", payee_name="Grocer", amount=-300000),
+            _make_transaction(id="txn-4", payee_name="Self", amount=-50000, transfer_account_id="acc-2"),
+            _make_transaction(id="txn-5", payee_name="Employer", amount=3000000),
+        ])
+        mock_cache.get_months = AsyncMock(return_value=[
+            _make_month_summary(month="2026-01-01", income=2800000, activity=-2600000),
+            _make_month_summary(month="2026-02-01", income=2900000, activity=-2700000),
+            _make_month_summary(month="2026-03-01", income=3000000, activity=-2200000),
+        ])
+
+        result = json.loads(await get_monthly_report(plan_id="bud-1", month="2026-03-01"))
+
+        assert result["summary"]["income"] == 3000.0
+        assert result["summary"]["spent"] == 2200.0
+        assert result["summary"]["net"] == 800.0
+        assert result["summary"]["savings_rate_pct"] == pytest.approx(26.7)
+        assert result["summary"]["age_of_money"] == 15
+        assert result["summary"]["overspent_category_count"] == 1
+        assert result["summary"]["overspent_total"] == 100.0
+
+        assert {g["name"] for g in result["category_groups"]} == {"Housing", "Groceries"}
+        assert result["top_categories"][0]["name"] == "Rent"  # highest spend first ($1500 vs $700)
+
+        assert len(result["overspent_categories"]) == 1
+        assert result["overspent_categories"][0]["name"] == "Food"
+
+        # Transfer excluded, income (positive amount) excluded, spends grouped by payee
+        payee_names = {p["name"] for p in result["top_payees"]}
+        assert payee_names == {"Landlord", "Grocer"}
+        grocer = next(p for p in result["top_payees"] if p["name"] == "Grocer")
+        assert grocer["spent"] == 700.0
+        assert grocer["transaction_count"] == 2
+
+        assert [t["month"] for t in result["trend"]] == ["2026-01-01", "2026-02-01", "2026-03-01"]
+
+    @pytest.mark.asyncio
+    async def test_excludes_internal_groups_and_respects_top_n(self, mock_cache):
+        from src.server import get_monthly_report
+
+        cats = [
+            _make_category(name="Rent", category_group_name="Housing", activity=-1000000, budgeted=1000000),
+            _make_category(name="CC", category_group_name="Credit Card Payments", activity=-500000),
+            _make_category(name="A", category_group_name="Fun", activity=-300000),
+            _make_category(name="B", category_group_name="Fun", activity=-200000),
+        ]
+        mock_cache.get_month = AsyncMock(return_value=_make_month_detail(income=1000000, categories=cats))
+        mock_cache.get_transactions_by_month = AsyncMock(return_value=[])
+        mock_cache.get_months = AsyncMock(return_value=[_make_month_summary()])
+
+        result = json.loads(await get_monthly_report(plan_id="bud-1", month="2026-03-01", top_n=2))
+        groups = {g["name"] for g in result["category_groups"]}
+        assert "Credit Card Payments" not in groups
+        assert len(result["top_categories"]) == 2
+
+    @pytest.mark.asyncio
+    async def test_current_month_default(self, mock_cache):
+        from src.server import get_monthly_report
+
+        mock_cache.get_month = AsyncMock(return_value=_make_month_detail(income=0, categories=[]))
+        mock_cache.get_transactions_by_month = AsyncMock(return_value=[])
+        mock_cache.get_months = AsyncMock(return_value=[])
+
+        result = json.loads(await get_monthly_report(plan_id="bud-1"))
+        assert result["month"] != "current"
+        assert len(result["month"]) == 10
+        assert result["summary"]["savings_rate_pct"] is None
 
 
 # ── Error Handling ────────────────────────────────────────────

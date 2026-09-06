@@ -31,7 +31,7 @@ from pathlib import Path
 
 # Bump this when tools are added or removed. A mismatch means either the change was
 # intentional (update the number) or registration silently broke (fix the bug).
-EXPECTED_TOOL_COUNT = 47
+EXPECTED_TOOL_COUNT = 49
 
 # Cheap canaries across a few domain modules, so a partial registration failure is
 # reported as a missing name rather than only as a count that happens to still match.

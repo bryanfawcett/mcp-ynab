@@ -79,6 +79,7 @@ export const LANDING_PAGE_HTML = `<!doctype html>
       <li><b>Delta sync</b> — only fetches what changed since the last call, using YNAB's server knowledge</li>
       <li><b>4-tier caching</b> — TTL cache, delta sync, retry with backoff, persistent storage</li>
       <li><b>Search &amp; analytics</b> — text search across transactions, per-category spending breakdowns, money-flow data</li>
+      <li><b>Monthly reports</b> — income/spending summary, category and payee breakdowns, overspent categories, and a multi-month trend in one call — built for a budget dashboard</li>
       <li><b>Bulk operations</b> — create or update multiple transactions in a single call</li>
       <li><b>Dollar amounts</b> — accepts plain dollars, converts to YNAB's internal format automatically</li>
     </ul>
@@ -92,13 +93,13 @@ export const LANDING_PAGE_HTML = `<!doctype html>
         <tr><th>Plans</th><td><code>list_plans</code>, <code>get_plan</code>, <code>get_plan_settings</code></td></tr>
         <tr><th>Accounts</th><td><code>list_accounts</code>, <code>get_account</code>, <code>create_account</code></td></tr>
         <tr><th>Categories</th><td><code>list_categories</code>, <code>get_category</code>, <code>create_category</code>, <code>update_category</code>, <code>create_category_group</code>, <code>update_category_group</code>, <code>get_category_for_month</code>, <code>update_category_for_month</code></td></tr>
-        <tr><th>Payees</th><td><code>list_payees</code>, <code>get_payee</code>, <code>update_payee</code></td></tr>
+        <tr><th>Payees</th><td><code>list_payees</code>, <code>create_payee</code>, <code>get_payee</code>, <code>update_payee</code></td></tr>
         <tr><th>Payee locations</th><td><code>list_payee_locations</code>, <code>get_payee_location</code>, <code>get_payee_locations_by_payee</code></td></tr>
         <tr><th>Months</th><td><code>list_months</code>, <code>get_month</code></td></tr>
         <tr><th>Money movements</th><td><code>list_money_movements</code>, <code>get_money_movements_for_month</code>, <code>list_money_movement_groups</code>, <code>get_money_movement_groups_for_month</code></td></tr>
         <tr><th>Transactions</th><td><code>list_transactions</code>, <code>get_transaction</code>, <code>get_transactions_by_account</code>, <code>get_transactions_by_category</code>, <code>get_transactions_by_month</code>, <code>get_transactions_by_payee</code>, <code>search_transactions</code>, <code>create_transaction</code>, <code>create_transactions</code>, <code>update_transaction</code>, <code>update_transactions</code>, <code>delete_transaction</code>, <code>import_transactions</code></td></tr>
         <tr><th>Scheduled</th><td><code>list_scheduled_transactions</code>, <code>get_scheduled_transaction</code>, <code>create_scheduled_transaction</code>, <code>update_scheduled_transaction</code>, <code>delete_scheduled_transaction</code></td></tr>
-        <tr><th>Analytics</th><td><code>get_money_flow</code>, <code>get_spending_by_category</code></td></tr>
+        <tr><th>Analytics</th><td><code>get_money_flow</code>, <code>get_spending_by_category</code>, <code>get_monthly_report</code></td></tr>
       </tbody>
     </table>
   </div>
