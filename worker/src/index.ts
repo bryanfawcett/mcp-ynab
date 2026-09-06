@@ -76,6 +76,29 @@ async function rateLimitKey(request: Request): Promise<string> {
   return sha256Hex(presentedToken(request) || "anonymous");
 }
 
+// @cloudflare/containers itself returns a bare 503 with an internal-sounding
+// message ("There is no Container instance available... you have reached
+// your max concurrent instance count...") when every one of max_instances
+// (wrangler.jsonc) is already busy — i.e. too many concurrent users right
+// now. Only that capacity path produces a 503 here (the Python app's own
+// errors are MCP-protocol-level, not raw HTTP 503s), so replace it with a
+// clear, branded response instead of leaking the library's wording.
+function isAtCapacity(response: Response): boolean {
+  return response.status === 503;
+}
+
+function capacityResponse(): Response {
+  return new Response(
+    JSON.stringify({
+      error: "at_capacity",
+      hint:
+        "Nyuchi MCP for YNAB is at capacity for concurrent users right now. " +
+        "Please try again in a minute or two — see https://ynab.nyuchi.com/project for status.",
+    }),
+    { status: 503, headers: { "content-type": "application/json", "Retry-After": "30" } },
+  );
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const { pathname } = new URL(request.url);
@@ -100,7 +123,8 @@ export default {
       // Python app's own auth check rejects it).
       const containerId = isMultiTenant(env) ? await tenantContainerId(request) : undefined;
       const container = getContainer(env.YNAB_MCP_CONTAINER, containerId);
-      return container.fetch(request);
+      const response = await container.fetch(request);
+      return isAtCapacity(response) ? capacityResponse() : response;
     }
 
     if (pathname === "/health") {

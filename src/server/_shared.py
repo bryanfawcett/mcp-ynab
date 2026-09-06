@@ -1,10 +1,13 @@
 import contextvars
 import json
+import logging
 import sys
 from functools import wraps
 
 import httpx
 from mcp.server.mcpserver import MCPServer
+
+logger = logging.getLogger(__name__)
 
 from src.cache.service import CacheService
 from src.config import Settings
@@ -230,7 +233,18 @@ async def _ensure_db():
 
 
 def handle_errors(func):
-    """Decorator that catches YNAB and HTTP errors and returns friendly messages."""
+    """Decorator that catches YNAB and HTTP errors and returns friendly messages.
+
+    Also logs each caught error server-side (tool name + error) before
+    returning it to the caller — previously these were swallowed entirely
+    into the tool's JSON return value, invisible on the server side even
+    with observability enabled, since nothing ever reached stdout/stderr for
+    Cloudflare's container logs (or a local terminal) to capture. This is
+    the closest equivalent to a browser's devtools console for this
+    deployment: `wrangler tail` or the Cloudflare dashboard's Logs tab for
+    the live container shows these in real time; locally they print to
+    stderr the same as any other Python logging call.
+    """
 
     @wraps(func)
     async def wrapper(*args, **kwargs):
@@ -238,10 +252,13 @@ def handle_errors(func):
             await _ensure_db()
             return await func(*args, **kwargs)
         except YNABError as e:
+            logger.error("%s: YNAB error %s: %s", func.__name__, e.status_code, e.message)
             return json.dumps({"error": e.message, "error_id": e.error_id, "status_code": e.status_code})
         except httpx.HTTPStatusError as e:
+            logger.error("%s: HTTP %s: %s", func.__name__, e.response.status_code, e.response.text)
             return json.dumps({"error": f"HTTP {e.response.status_code}: {e.response.text}"})
         except httpx.RequestError as e:
+            logger.error("%s: request failed: %s", func.__name__, e)
             return json.dumps({"error": f"Request failed: {e}"})
 
     return wrapper
