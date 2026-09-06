@@ -38,10 +38,29 @@ const { title, description } = Astro.props;
      library's own supported toggle mechanism, rather than hand-copying
      hex values between the two conventions (tokens.css explicitly says
      not to hand-edit its values). Must run synchronously, before any
-     render-blocking content, which is why it's first in <head>. -->
+     render-blocking content, which is why it's first in <head>.
+
+     Also listens for the preference changing while the tab stays open
+     (e.g. the OS switching themes at sunset) -- the previous CSS-only
+     `@media (prefers-color-scheme)` approach updated live for free;
+     matching that with an attribute-based toggle needs this explicit
+     listener, not just the one-time check above.
+
+     No-JS fallback: without JavaScript this attribute never gets set, so
+     visitors always get the library's light-mode default regardless of
+     OS preference, rather than this app's intended dark-by-default. A
+     `prefers-color-scheme` media query could restore that, but only by
+     hand-copying tokens.css's dark hex values into this file, which is
+     exactly what that file's own docstring says not to do. Accepted
+     tradeoff: a static informational site with negligible no-JS traffic
+     isn't worth reintroducing a second, driftable copy of the palette. -->
 <script is:inline>
-  document.documentElement.dataset.theme =
-    matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+  const media = matchMedia("(prefers-color-scheme: light)");
+  const applyTheme = () => {
+    document.documentElement.dataset.theme = media.matches ? "light" : "dark";
+  };
+  applyTheme();
+  media.addEventListener("change", applyTheme);
 </script>
 <title>{title}</title>
 <meta name="description" content={description}>
