@@ -7,17 +7,23 @@ would mostly read as noise. A shared icon per group (accounts, transactions,
 categories, ...) gives a quick visual anchor for what each tool touches
 without commissioning one-off art per tool.
 
-Each icon is a gold rounded-square background — Nyuchi's own Mzizi ecosystem
-mineral (`mzizi_get_tokens` family=ecosystem/minerals; distinct from Bundu's
-copper, since this is specifically a Nyuchi product, not a generic
-cross-ecosystem one), matching `worker/site`'s favicon and `--color-accent` —
-with a simple dark-brown glyph (the same token's light-mode value, chosen
-over white for contrast against the bright gold background). Carrying its
-own background rather than a transparent glyph keeps contrast solid
-regardless of the host's light/dark theme, at the cost of not tinting
-per-theme the way `Icon.theme` would allow.
+Each per-domain icon is a gold rounded-square background — Nyuchi's own
+Mzizi ecosystem mineral (`mzizi_get_tokens` family=ecosystem/minerals;
+distinct from Bundu's copper, since this is specifically a Nyuchi product,
+not a generic cross-ecosystem one), matching `worker/site`'s favicon and
+`--color-accent` — with a simple dark-brown glyph (the same token's
+light-mode value, chosen over white for contrast against the bright gold
+background). Carrying its own background rather than a transparent glyph
+keeps contrast solid regardless of the host's light/dark theme, at the cost
+of not tinting per-theme the way `Icon.theme` would allow.
+
+The server-level icon (`SERVER`, below) is different: it's Nyuchi's actual
+bee logo — the real asset from nyuchi.com/icon-dark.png (assets/nyuchi-bee.png
+here), not a hand-drawn recreation of it. "Nyuchi" is Shona for "Bee".
 """
 
+import base64
+from importlib import resources
 from urllib.parse import quote
 
 from mcp_types import Icon
@@ -41,20 +47,15 @@ def _icon(glyph: str) -> Icon:
     return Icon(src=_data_uri(svg), mime_type="image/svg+xml", sizes=["any"])
 
 
-# Server-level icon — Nyuchi's actual bee mark (the same glyph as
+def _png_icon(filename: str) -> Icon:
+    png_bytes = resources.files(__package__).joinpath("assets", filename).read_bytes()
+    b64 = base64.b64encode(png_bytes).decode("ascii")
+    return Icon(src=f"data:image/png;base64,{b64}", mime_type="image/png", sizes=["200x200"])
+
+
+# Server-level icon — Nyuchi's actual bee mark (the same asset as
 # worker/site's favicon/header), for MCP clients that show a server icon.
-# "Nyuchi" is Shona for "Bee" — this is the literal brand mark, not a
-# monogram standing in for it.
-SERVER = _icon(
-    '<path d="M9.3 7.2Q8 5.6 6.9 6.6M10.4 7.9Q9.4 6.1 8.7 7.2" '
-    'stroke="#5D4037" stroke-width="0.9" fill="none" stroke-linecap="round"/>'
-    '<circle cx="10" cy="8.6" r="2.3" fill="#5D4037"/>'
-    '<ellipse cx="17.5" cy="8.6" rx="3.7" ry="2.1" transform="rotate(18 17.5 8.6)" '
-    'fill="#5D4037" opacity="0.55"/>'
-    '<ellipse cx="16.2" cy="13.5" rx="5.6" ry="3.1" transform="rotate(33 16.2 13.5)" fill="#5D4037"/>'
-    f'<rect x="12.3" y="10.6" width="1.5" height="6.2" transform="rotate(33 13.05 13.7)" fill="{_GOLD}"/>'
-    f'<rect x="15.3" y="10.6" width="1.5" height="6.2" transform="rotate(33 16.05 13.7)" fill="{_GOLD}"/>'
-)
+SERVER = _png_icon("nyuchi-bee.png")
 
 USER = _icon(
     '<circle cx="12" cy="9" r="3.2" fill="none" stroke="#5D4037" stroke-width="1.8"/>'

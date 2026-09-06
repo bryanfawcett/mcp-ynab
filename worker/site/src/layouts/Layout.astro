@@ -19,18 +19,6 @@ interface Props {
   description: string;
 }
 const { title, description } = Astro.props;
-// Nyuchi's actual bee mark — "Nyuchi" is Shona for "Bee" — not a monogram
-// standing in for it. Same glyph as src/server/icons.py's SERVER icon.
-const BEE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-<rect width="24" height="24" rx="6" fill="#FFD740"/>
-<path d="M9.3 7.2Q8 5.6 6.9 6.6M10.4 7.9Q9.4 6.1 8.7 7.2" stroke="#5D4037" stroke-width="0.9" fill="none" stroke-linecap="round"/>
-<circle cx="10" cy="8.6" r="2.3" fill="#5D4037"/>
-<ellipse cx="17.5" cy="8.6" rx="3.7" ry="2.1" transform="rotate(18 17.5 8.6)" fill="#5D4037" opacity="0.55"/>
-<ellipse cx="16.2" cy="13.5" rx="5.6" ry="3.1" transform="rotate(33 16.2 13.5)" fill="#5D4037"/>
-<rect x="12.3" y="10.6" width="1.5" height="6.2" transform="rotate(33 13.05 13.7)" fill="#FFD740"/>
-<rect x="15.3" y="10.6" width="1.5" height="6.2" transform="rotate(33 16.05 13.7)" fill="#FFD740"/>
-</svg>`;
-const FAVICON = `data:image/svg+xml,${encodeURIComponent(BEE_SVG)}`;
 ---
 <!doctype html>
 <html lang="en">
@@ -39,7 +27,12 @@ const FAVICON = `data:image/svg+xml,${encodeURIComponent(BEE_SVG)}`;
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{title}</title>
 <meta name="description" content={description}>
-<link rel="icon" type="image/svg+xml" href={FAVICON}>
+<!-- Nyuchi's actual bee mark (nyuchi.com/icon-dark.png) — "Nyuchi" is Shona
+     for "Bee". A single fixed favicon rather than a light/dark swap, since
+     <link rel=icon media=...> support is inconsistent across browsers; the
+     dark variant is self-contained (own near-black background) so it holds
+     up in either browser chrome theme. -->
+<link rel="icon" type="image/png" href="/icon-dark.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@500;600;700&family=Noto+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -62,6 +55,11 @@ const FAVICON = `data:image/svg+xml,${encodeURIComponent(BEE_SVG)}`;
     --radius-lg: 14px;
     --radius-full: 9999px;
 
+    /* Comfortable width on laptop/desktop — 760px (a single-column article
+       measure) left this cramped on anything wider than a phone, with most
+       of the viewport sitting empty on either side. */
+    --content-width: 1040px;
+
     /* Semantic status colors (project page) — separate from the
        brand accent above, never used interchangeably with it. */
     --status-done: #7CD992;
@@ -70,6 +68,17 @@ const FAVICON = `data:image/svg+xml,${encodeURIComponent(BEE_SVG)}`;
     --status-action-bg: #35301A;
     --status-blocked: #F2B8B5;
     --status-blocked-bg: #3A211F;
+
+    /* Mzizi's mineral palette (mzizi_get_tokens family=minerals), dark-mode
+       values — used only by .mineral-strip below, a brand accent distinct
+       from --color-accent (which is gold alone). Matches the 5-of-7 subset
+       and left-to-right order Mzizi's own components use (login-01),
+       omitting sodalite/copper. */
+    --mineral-cobalt: #00B0FF;
+    --mineral-tanzanite: #B388FF;
+    --mineral-malachite: #64FFDA;
+    --mineral-gold: #FFD740;
+    --mineral-terracotta: #E1B07E;
   }
   @media (prefers-color-scheme: light) {
     :root:not([data-theme]) {
@@ -87,11 +96,17 @@ const FAVICON = `data:image/svg+xml,${encodeURIComponent(BEE_SVG)}`;
       --status-action-bg: #FBEFD8;
       --status-blocked: #B3261E;
       --status-blocked-bg: #FBE4E2;
+
+      --mineral-cobalt: #0047AB;
+      --mineral-tanzanite: #4B0082;
+      --mineral-malachite: #004D40;
+      --mineral-gold: #5D4037;
+      --mineral-terracotta: #A0522D;
     }
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg-base); color: var(--text-primary); font: 16px/1.6 var(--font-sans); }
-  main { max-width: 760px; margin: 0 auto; padding: 4rem 1.5rem 5rem; }
+  main { max-width: var(--content-width); margin: 0 auto; padding: 4rem 1.5rem 5rem; }
   .badge {
     display: inline-flex; align-items: center; gap: .5rem;
     padding: .3rem .75rem; border: 1px solid var(--border); border-radius: var(--radius-full);
@@ -136,7 +151,7 @@ const FAVICON = `data:image/svg+xml,${encodeURIComponent(BEE_SVG)}`;
 
   .site-header {
     display: flex; align-items: center; justify-content: space-between; gap: 1rem;
-    max-width: 760px; margin: 0 auto; padding: 1.5rem 1.5rem 0;
+    max-width: var(--content-width); margin: 0 auto; padding: 1.5rem 1.5rem 0;
   }
   .site-header .brand {
     display: flex; align-items: center; gap: .6rem;
@@ -144,13 +159,27 @@ const FAVICON = `data:image/svg+xml,${encodeURIComponent(BEE_SVG)}`;
     color: var(--text-primary); text-decoration: none;
   }
   .site-header .brand img { width: 26px; height: 26px; border-radius: 7px; display: block; }
-  .site-header nav { display: flex; gap: 1.5rem; font-size: .88rem; }
+  .site-header nav { display: flex; align-items: center; gap: 1.5rem; font-size: .88rem; }
   .site-header nav a { color: var(--text-secondary); }
   .site-header nav a:hover { color: var(--text-primary); }
+  .site-header nav a[aria-label="GitHub repository"] { display: flex; align-items: center; }
+
+  /* Full-bleed brand accent (Mzizi's MineralStrip pattern: 5 of the 7
+     ecosystem mineral colors as equal flex segments) sitting right above
+     the footer content — a hard-stop gradient stands in for 5 child
+     elements. Decorative only (aria-hidden on the element below). */
+  .mineral-strip {
+    height: 4px; width: 100%;
+    background: linear-gradient(to right,
+      var(--mineral-cobalt) 0 20%,
+      var(--mineral-tanzanite) 20% 40%,
+      var(--mineral-malachite) 40% 60%,
+      var(--mineral-gold) 60% 80%,
+      var(--mineral-terracotta) 80% 100%);
+  }
 
   .site-footer {
-    max-width: 760px; margin: 4rem auto 0; padding: 1.75rem 1.5rem 3rem;
-    border-top: 1px solid var(--border);
+    max-width: var(--content-width); margin: 0 auto; padding: 1.75rem 1.5rem 3rem;
     display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
     font-size: .82rem; color: var(--text-secondary);
   }
@@ -171,18 +200,33 @@ const FAVICON = `data:image/svg+xml,${encodeURIComponent(BEE_SVG)}`;
 <a class="skip-link" href="#main">Skip to content</a>
 <header class="site-header">
   <a class="brand" href="/">
-    <img src={FAVICON} alt="">
+    <picture>
+      <source srcset="/icon-light.png" media="(prefers-color-scheme: light)">
+      <img src="/icon-dark.png" alt="" width="26" height="26">
+    </picture>
     Nyuchi MCP for YNAB
   </a>
   <nav aria-label="Primary">
     <a href="/project">Project</a>
     <a href="/privacy-policy">Privacy</a>
     <a href="https://nyuchi.com" target="_blank" rel="noopener">nyuchi.com</a>
+    <a href="https://github.com/bryanfawcett/mcp-ynab" target="_blank" rel="noopener" aria-label="GitHub repository" title="GitHub">
+      <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38
+          0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13
+          -.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07
+          -1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82
+          a7.6 7.6 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12
+          .51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48
+          0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/>
+      </svg>
+    </a>
   </nav>
 </header>
 <main id="main">
   <slot />
 </main>
+<div class="mineral-strip" aria-hidden="true"></div>
 <footer class="site-footer">
   <span>&copy; 2026 Nyuchi Africa. Part of the Bundu Foundation. Independent, unofficial — not affiliated with or endorsed by YNAB.</span>
   <nav aria-label="Footer">
@@ -191,5 +235,40 @@ const FAVICON = `data:image/svg+xml,${encodeURIComponent(BEE_SVG)}`;
     <a href="/privacy-policy">Privacy Policy</a>
   </nav>
 </footer>
+<script>
+  // Intercom Messenger — support widget, loaded on every page. Standard
+  // async install snippet (intercom.com/help/en/articles/6205786): defines
+  // a queued `window.Intercom` stub immediately so any call made before the
+  // real script loads (there are none here, but a future page might) isn't
+  // lost, then lazy-loads the actual widget script after the page finishes
+  // loading rather than blocking on it. Unrelated to the MCP/YNAB data path
+  // — this only ever sees site-visitor/support-chat data, never budget data
+  // (see the Privacy Policy's "Support chat" section).
+  window.intercomSettings = { api_base: "https://api-iam.intercom.io", app_id: "f1vga504" };
+  (function () {
+    var w = window as any;
+    var ic = w.Intercom;
+    if (typeof ic === "function") {
+      ic("reattach_activator");
+      ic("update", w.intercomSettings);
+    } else {
+      var d = document;
+      var i: any = function () { i.c(arguments); };
+      i.q = [];
+      i.c = function (args: unknown) { i.q.push(args); };
+      w.Intercom = i;
+      var load = function () {
+        var s = d.createElement("script");
+        s.type = "text/javascript";
+        s.async = true;
+        s.src = "https://widget.intercom.io/widget/f1vga504";
+        var x = d.getElementsByTagName("script")[0];
+        x.parentNode!.insertBefore(s, x);
+      };
+      if (document.readyState === "complete") load();
+      else w.addEventListener("load", load, false);
+    }
+  })();
+</script>
 </body>
 </html>

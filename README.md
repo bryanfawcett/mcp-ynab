@@ -216,7 +216,13 @@ alive at once; raise it if you expect more concurrent users).
    4. Set **Production branch** to `main` under **Settings → Builds**. Without
       this, Workers Builds deploys to *production* off of every push to
       *every* branch — including work-in-progress PR branches — rather than
-      only after a merge to `main`.
+      only after a merge to `main`. Leave **Builds for non-production
+      branches** unchecked: its "Version command" runs from the repo root
+      regardless of the Root directory setting above, so on this repo's
+      layout it always fails with "Missing entry-point" — there's no
+      per-branch override to fix that with. The equivalent check (does the
+      Worker actually deploy cleanly) runs in CI instead, as the
+      `worker-deploy-dryrun` job.
    5. Under the Worker's **Settings → Variables & Secrets**, add either
       `YNAB_API_KEY` and `MCP_AUTH_TOKEN` (single-tenant) or `MCP_MULTI_TENANT`
       set to `true` (multi-tenant) as secrets. For OAuth, add

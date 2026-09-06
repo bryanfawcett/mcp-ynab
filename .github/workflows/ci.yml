@@ -69,6 +69,40 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run check:a11y
 
+  # Validates the Worker itself deploys cleanly — entry point resolves,
+  # wrangler.jsonc's bindings are well-formed, the built site satisfies the
+  # `assets` binding — without needing Docker or real Cloudflare credentials
+  # (--dry-run never calls the API; --containers-rollout=none skips the
+  # image build, covered separately by the docker job below). This replaces
+  # the equivalent check that used to run as Cloudflare's own Workers Builds
+  # "Version command" on every push: that command runs from the repo root
+  # regardless of the dashboard's configured root directory, so it always
+  # failed with "Missing entry-point" on this repo's worker/-nested layout.
+  # Moved here rather than fixed there since Workers Builds' Version command
+  # has no per-branch root-directory override to fix it with.
+  worker-deploy-dryrun:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: worker
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            worker/package-lock.json
+            worker/site/package-lock.json
+      - run: npm ci
+      - run: npm ci
+        working-directory: worker/site
+      - run: npm run build
+        working-directory: worker/site
+      - run: npx wrangler deploy --dry-run --containers-rollout=none
+        env:
+          CLOUDFLARE_API_TOKEN: dry-run-does-not-call-the-api
+
   # Builds worker/Dockerfile (image_build_context points back at the repo root
   # for its COPY paths) and boots it, the way Cloudflare's own build does when
   # the Worker is connected via Workers Builds. Catches breakage no local dev
