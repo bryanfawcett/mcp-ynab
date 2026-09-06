@@ -125,6 +125,11 @@ const { title, description } = Astro.props;
   .card {
     background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
     padding: 1.5rem; margin: 1.5rem 0;
+    /* A wide table (e.g. index.astro's "Available tools") can't shrink below
+       its longest unbreakable <code> token — let it scroll within the card
+       on narrow viewports rather than forcing the whole page to scroll
+       horizontally. */
+    overflow-x: auto;
   }
   code, .mono { font: 0.9em/1.5 var(--font-mono); }
   .endpoint {
@@ -159,7 +164,10 @@ const { title, description } = Astro.props;
     color: var(--text-primary); text-decoration: none;
   }
   .site-header .brand img { width: 26px; height: 26px; border-radius: 7px; display: block; }
-  .site-header nav { display: flex; align-items: center; gap: 1.5rem; font-size: .88rem; }
+  .site-header nav {
+    display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end;
+    gap: .5rem 1.5rem; font-size: .88rem;
+  }
   .site-header nav a { color: var(--text-secondary); }
   .site-header nav a:hover { color: var(--text-primary); }
   .site-header nav a[aria-label="GitHub repository"] { display: flex; align-items: center; }
