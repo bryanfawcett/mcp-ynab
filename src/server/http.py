@@ -42,6 +42,7 @@ from src.cache.service import CacheService
 from src.config import Settings
 from src.server import _shared
 from src.server._shared import mcp
+from src.server.oauth import OAuthProxy, build_oauth_proxy
 from src.ynab_client import YNABClient
 
 MCP_PATH = "/mcp"
@@ -142,10 +143,13 @@ class MultiTenantMiddleware:
     other auth failure already goes through.
     """
 
-    def __init__(self, app: ASGIApp, registry: TenantRegistry, protected_path: str) -> None:
+    def __init__(
+        self, app: ASGIApp, registry: TenantRegistry, protected_path: str, oauth_proxy: OAuthProxy | None = None
+    ) -> None:
         self.app = app
         self.registry = registry
         self.protected_path = protected_path
+        self.oauth_proxy = oauth_proxy
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http" or not scope["path"].startswith(self.protected_path):
@@ -165,6 +169,14 @@ class MultiTenantMiddleware:
             )
             await response(scope, receive, send)
             return
+
+        # If OAuth is configured and `presented` is one of its own opaque
+        # access tokens, this resolves to the underlying YNAB access token
+        # (refreshing it first if needed); otherwise it's returned unchanged
+        # — `presented` *is* the caller's own YNAB personal access token, as
+        # in the PAT-only flow.
+        if self.oauth_proxy is not None:
+            presented = await self.oauth_proxy.resolve_token(presented)
 
         tenant_client, tenant_cache, db_path = await self.registry.get_or_create(presented)
         tokens = _shared.activate_tenant(tenant_client, tenant_cache, db_path)
@@ -211,7 +223,12 @@ def create_app() -> Starlette:
         cache_dir = Path(settings.cache_db_path).parent
         cache_dir.mkdir(parents=True, exist_ok=True)
         registry = TenantRegistry(settings, cache_dir)
-        app.add_middleware(MultiTenantMiddleware, registry=registry, protected_path=MCP_PATH)
+        # None (the default) when YNAB_OAUTH_CLIENT_ID/SECRET aren't set —
+        # the PAT-only flow is unaffected either way. See src/server/oauth.py.
+        oauth_proxy = build_oauth_proxy(settings)
+        if oauth_proxy is not None:
+            app.router.routes.extend(oauth_proxy.routes())
+        app.add_middleware(MultiTenantMiddleware, registry=registry, protected_path=MCP_PATH, oauth_proxy=oauth_proxy)
     else:
         if not settings.mcp_auth_token:
             raise RuntimeError(
