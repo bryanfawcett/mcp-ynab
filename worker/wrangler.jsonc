@@ -47,6 +47,16 @@
   // naming conflict (was the last deploy's code even the one running?).
   "version_metadata": { "binding": "CF_VERSION_METADATA" },
 
+  // Durable store for the OAuth proxy (src/server/oauth.py, not yet
+  // written): authorization codes, refresh tokens, and registered clients.
+  // KV rather than D1 — every record here is a pure point-lookup by opaque
+  // string, no relational queries, and KV's built-in per-key TTL lets a
+  // short-lived authorization code expire itself with no cleanup job. Needed
+  // because the Container's disk is wiped on every idle-sleep, so a refresh
+  // token can't live in the same per-tenant SQLite file the personal-access-
+  // token flow uses today — it would vanish on the next cold start.
+  "kv_namespaces": [{ "binding": "OAUTH_KV", "id": "afc28b10107f4fc591857970d92dc62c" }],
+
   // The landing page and privacy policy (worker/site, an Astro static site)
   // built to worker/site/dist — `npm run build:site` (package.json) builds
   // it; wrangler bundles whatever's in this directory at deploy time. A
