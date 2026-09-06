@@ -116,7 +116,11 @@ const { title, description } = Astro.props;
   h1 {
     font-family: var(--font-display); font-weight: 700;
     text-transform: uppercase; letter-spacing: .01em;
-    font-size: clamp(2.75rem, 4vw + 1.5rem, 5.5rem);
+    /* 2rem floor, not 2.75rem: at a 360-400px phone width, bold uppercase
+       serif at 44px+ forces "TALK TO YOUR" onto a line that barely fits
+       (or doesn't), reading as an oversized, blocky wall of text rather
+       than a headline. */
+    font-size: clamp(2rem, 7vw + 0.5rem, 5.5rem);
     line-height: .95; margin: 0 0 1rem;
   }
   h1 span { color: var(--color-accent); }
@@ -150,19 +154,29 @@ const { title, description } = Astro.props;
   nav a { text-decoration: none; }
 
   .site-header {
-    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
     max-width: var(--content-width); margin: 0 auto; padding: 1.5rem 1.5rem 0;
   }
   .site-header .brand {
-    display: flex; align-items: center; gap: .6rem;
+    display: flex; align-items: center; gap: .6rem; flex-shrink: 0; white-space: nowrap;
     font-family: var(--font-serif); font-weight: 600; font-size: 1rem;
     color: var(--text-primary); text-decoration: none;
   }
   .site-header .brand img { width: 26px; height: 26px; border-radius: 7px; display: block; }
-  .site-header nav { display: flex; align-items: center; gap: 1.5rem; font-size: .88rem; }
+  .site-header nav {
+    display: flex; align-items: center; flex-wrap: wrap;
+    gap: 1.5rem; row-gap: .5rem; font-size: .88rem;
+  }
   .site-header nav a { color: var(--text-secondary); }
   .site-header nav a:hover { color: var(--text-primary); }
   .site-header nav a[aria-label="GitHub repository"] { display: flex; align-items: center; }
+  @media (max-width: 480px) {
+    /* Without flex-wrap above, the brand text and all 5 nav items were
+       forced onto one un-wrapping line, squeezing "Nyuchi MCP for YNAB"
+       into wrapping mid-phrase instead. Wrapping the header is the real
+       fix; this just tightens spacing once nav drops to its own line. */
+    .site-header nav { gap: 1rem; font-size: .82rem; }
+  }
 
   /* Full-bleed brand accent (Mzizi's MineralStrip pattern: 5 of the 7
      ecosystem mineral colors as equal flex segments) sitting right above
