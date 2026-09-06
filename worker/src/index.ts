@@ -15,6 +15,10 @@ interface Env {
   // OAUTH_KV namespace over its REST API (a Container is separate compute
   // from the Worker, so it can't use the native `env.OAUTH_KV` binding
   // below), hence a scoped API token rather than the binding itself.
+  // YNAB_OAUTH_CLIENT_ID and CLOUDFLARE_ACCOUNT_ID are plain `vars` in
+  // wrangler.jsonc (neither is a credential — see the comment there); only
+  // the two secrets below are set via `wrangler secret put`/`versions secret
+  // put`.
   YNAB_OAUTH_CLIENT_ID?: string;
   YNAB_OAUTH_CLIENT_SECRET?: string;
   CLOUDFLARE_ACCOUNT_ID?: string;
