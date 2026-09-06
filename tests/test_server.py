@@ -877,6 +877,23 @@ class TestGetMonthlyReport:
         assert len(result["top_categories"]) == 2
 
     @pytest.mark.asyncio
+    async def test_trend_months_zero_returns_empty_trend(self, mock_cache):
+        # Regression test: Python's `[-0:]` slice is the same as `[0:]`, so a naive
+        # `months[-trend_months:]` would return every month instead of none.
+        from src.server import get_monthly_report
+
+        mock_cache.get_month = AsyncMock(return_value=_make_month_detail(categories=[]))
+        mock_cache.get_transactions_by_month = AsyncMock(return_value=[])
+        mock_cache.get_months = AsyncMock(return_value=[
+            _make_month_summary(month="2026-01-01"),
+            _make_month_summary(month="2026-02-01"),
+            _make_month_summary(month="2026-03-01"),
+        ])
+
+        result = json.loads(await get_monthly_report(plan_id="bud-1", month="2026-03-01", trend_months=0))
+        assert result["trend"] == []
+
+    @pytest.mark.asyncio
     async def test_current_month_default(self, mock_cache):
         from src.server import get_monthly_report
 

@@ -1,3 +1,4 @@
+import asyncio
 import json
 from datetime import date
 
@@ -142,9 +143,11 @@ async def get_monthly_report(
         today = date.today()
         month = today.replace(day=1).strftime("%Y-%m-%d")
 
-    month_detail = await _shared.cache.get_month(month, plan_id)
-    transactions = await _shared.cache.get_transactions_by_month(month, plan_id)
-    all_months = await _shared.cache.get_months(plan_id)
+    month_detail, transactions, all_months = await asyncio.gather(
+        _shared.cache.get_month(month, plan_id),
+        _shared.cache.get_transactions_by_month(month, plan_id),
+        _shared.cache.get_months(plan_id),
+    )
 
     budget_categories = [
         c for c in month_detail.categories
@@ -233,6 +236,11 @@ async def get_monthly_report(
     # every historical month would mean fetching each month's full category detail
     # instead of one cheap summary call per month. Income and net direction match;
     # spending here also includes credit-card payments and internal transfers.
+    # `[-trend_months:]` would silently return everything for trend_months <= 0
+    # (Python's `[-0:]` is `[0:]`, and a negative count slices from the front), so
+    # a non-positive count is handled explicitly instead of relying on the slice.
+    months_in_range = sorted((m for m in all_months if m.month <= month), key=lambda m: m.month)
+    recent_months = months_in_range[-trend_months:] if trend_months > 0 else []
     trend = [
         {
             "month": m.month,
@@ -240,7 +248,7 @@ async def get_monthly_report(
             "spent": milliunits_to_dollars(abs(m.activity)),
             "net": milliunits_to_dollars(abs(m.income) + m.activity),
         }
-        for m in sorted((m for m in all_months if m.month <= month), key=lambda m: m.month)[-trend_months:]
+        for m in recent_months
     ]
 
     result = {
