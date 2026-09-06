@@ -5,6 +5,14 @@ import Layout from "../layouts/Layout.astro";
   title="Privacy Policy — Nyuchi MCP for YNAB"
   description="How Nyuchi MCP for YNAB handles the YNAB data it accesses on your behalf."
 >
+  <nav aria-label="Breadcrumb" style="font-size:.82rem; margin-bottom:1.5rem;">
+    <ol style="list-style:none; display:flex; gap:.5rem; margin:0; padding:0; color:var(--text-secondary);">
+      <li><a href="/">Home</a></li>
+      <li aria-hidden="true">/</li>
+      <li aria-current="page" style="color:var(--text-primary);">Privacy Policy</li>
+    </ol>
+  </nav>
+
   <h1 style="text-transform:none; font-size:clamp(2rem, 3vw + 1.2rem, 3.25rem);">Privacy Policy</h1>
   <p style="color:var(--text-secondary); font-size:.85rem; margin:0 0 3rem;">Last updated: September 6, 2026</p>
 
@@ -78,8 +86,4 @@ import Layout from "../layouts/Layout.astro";
     you will be asked to re-consent before that new access or use takes effect.
   </p>
 
-  <footer>
-    <a href="/">Nyuchi MCP for YNAB</a> — an independent, unofficial integration. Not affiliated
-    with or endorsed by YNAB.
-  </footer>
 </Layout>

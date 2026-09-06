@@ -1,0 +1,182 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { ROADMAP, REPO, type TaskStatus, type TaskRef } from "../data/roadmap.ts";
+
+const STATUS_LABEL: Record<TaskStatus, string> = {
+  done: "Done",
+  action: "Action needed",
+  blocked: "Blocked",
+};
+
+const allTasks = ROADMAP.flatMap((c) => c.tasks);
+const counts = {
+  done: allTasks.filter((t) => t.status === "done").length,
+  action: allTasks.filter((t) => t.status === "action").length,
+  blocked: allTasks.filter((t) => t.status === "blocked").length,
+};
+
+function refHref(ref: TaskRef): string {
+  return `https://github.com/${REPO}/${ref.type === "pr" ? "pull" : "issues"}/${ref.number}`;
+}
+function refLabel(ref: TaskRef): string {
+  return `${ref.type === "pr" ? "PR" : "Issue"} #${ref.number}`;
+}
+---
+<Layout
+  title="Project — Nyuchi MCP for YNAB"
+  description="What's shipped, in progress, and blocked for Nyuchi MCP for YNAB — built in the open, with every task linked to its PR or issue."
+>
+  <nav aria-label="Breadcrumb" style="font-size:.82rem; margin-bottom:1.5rem;">
+    <ol style="list-style:none; display:flex; gap:.5rem; margin:0; padding:0; color:var(--text-secondary);">
+      <li><a href="/">Home</a></li>
+      <li aria-hidden="true">/</li>
+      <li aria-current="page" style="color:var(--text-primary);">Project</li>
+    </ol>
+  </nav>
+
+  <p class="eyebrow">Nyuchi MCP for YNAB &middot; Project Dashboard</p>
+  <h1 class="board-title">Ship Board</h1>
+  <p class="lede" style="margin-bottom:2rem;">
+    Task tracker for getting ynab.nyuchi.com to a mergeable, launchable state — infrastructure,
+    the OAuth proxy, and what's left before wider launch. Updated by hand alongside the code;
+    every shipped task links to the pull request that shipped it.
+  </p>
+
+  <div class="summary-row">
+    <div class="summary-tile done"><div class="count">{counts.done}</div><div class="label">Done</div></div>
+    <div class="summary-tile action"><div class="count">{counts.action}</div><div class="label">Action needed</div></div>
+    <div class="summary-tile blocked"><div class="count">{counts.blocked}</div><div class="label">Blocked</div></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="filters" role="group" aria-label="Filter by status">
+      <button class="filter-btn" data-filter="all" aria-pressed="true">All</button>
+      <button class="filter-btn" data-filter="action" aria-pressed="false">Action needed</button>
+      <button class="filter-btn" data-filter="blocked" aria-pressed="false">Blocked</button>
+      <button class="filter-btn" data-filter="done" aria-pressed="false">Done</button>
+    </div>
+    <a class="repo-btn" href={`https://github.com/${REPO}`} target="_blank" rel="noopener">View on GitHub</a>
+  </div>
+
+  {ROADMAP.map((category) => (
+    <section class="category" data-category>
+      <div class="category-head">
+        <h2>{category.name}</h2>
+        <span class="category-count" data-count>{category.tasks.length} of {category.tasks.length} shown</span>
+      </div>
+      <ul class="tasks">
+        {category.tasks.map((task) => (
+          <li class="task" data-status={task.status}>
+            <span class={`status-pill status-${task.status}`}>{STATUS_LABEL[task.status]}</span>
+            <div class="task-main">
+              <div class="task-title">{task.title}</div>
+              <div class="task-body">{task.detail}</div>
+            </div>
+            {task.ref && (
+              <a class="ref-badge" href={refHref(task.ref)} target="_blank" rel="noopener">
+                {refLabel(task.ref)}
+              </a>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))}
+
+  <style>
+    .eyebrow {
+      font-family: var(--font-mono); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase;
+      color: var(--color-accent); margin: 0 0 .5rem;
+    }
+    .board-title {
+      text-transform: none; letter-spacing: normal;
+      font-size: clamp(2rem, 3vw + 1.2rem, 3rem); margin: 0 0 .75rem;
+    }
+
+    .summary-row {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .75rem;
+      margin-bottom: 1.5rem;
+    }
+    .summary-tile {
+      background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+      padding: .9rem 1rem;
+    }
+    .summary-tile .count { font-family: var(--font-mono); font-size: 1.7rem; font-weight: 500; line-height: 1; }
+    .summary-tile .label { font-size: .74rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .04em; margin-top: .3rem; }
+    .summary-tile.done .count { color: var(--status-done); }
+    .summary-tile.action .count { color: var(--status-action); }
+    .summary-tile.blocked .count { color: var(--status-blocked); }
+
+    .toolbar { display: flex; justify-content: space-between; align-items: center; gap: .75rem; flex-wrap: wrap; margin-bottom: .5rem; }
+    .filters { display: flex; gap: .4rem; flex-wrap: wrap; }
+    .filter-btn {
+      font-family: var(--font-mono); font-size: .72rem; text-transform: uppercase; letter-spacing: .04em;
+      padding: .35rem .7rem; border-radius: var(--radius-full); border: 1px solid var(--border);
+      background: var(--bg-surface); color: var(--text-secondary); cursor: pointer;
+    }
+    .filter-btn[aria-pressed="true"] { border-color: var(--color-accent); color: var(--text-primary); }
+    .repo-btn {
+      font-family: var(--font-mono); font-size: .78rem; padding: .45rem 1rem; border-radius: 8px;
+      background: var(--color-accent); color: var(--bg-base); text-decoration: none;
+    }
+    .repo-btn:hover { text-decoration: none; filter: brightness(1.05); }
+
+    .category { margin-top: 2rem; }
+    .category-head { display: flex; align-items: baseline; gap: .6rem; margin-bottom: .6rem; }
+    .category-head h2 { margin: 0; font-size: 1.3rem; }
+    .category-count { font-family: var(--font-mono); font-size: .76rem; color: var(--text-secondary); }
+
+    ul.tasks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
+    li.task {
+      background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+      padding: .8rem .9rem; display: flex; align-items: flex-start; gap: .7rem;
+    }
+    .status-pill {
+      flex: none; font-family: var(--font-mono); font-size: .66rem; text-transform: uppercase; letter-spacing: .04em;
+      padding: .2rem .55rem; border-radius: var(--radius-full); margin-top: .1rem; border: 1px solid transparent;
+    }
+    /* A thin border in the status color keeps the badge shape legible on a
+       light pastel background that's close in lightness to the card behind
+       it -- boosting the fill color itself to fix that would cost too much
+       of the (already contrast-checked) text-on-pill legibility instead. */
+    .status-pill.status-done { color: var(--status-done); background: var(--status-done-bg); border-color: color-mix(in srgb, var(--status-done) 35%, transparent); }
+    .status-pill.status-action { color: var(--status-action); background: var(--status-action-bg); border-color: color-mix(in srgb, var(--status-action) 35%, transparent); }
+    .status-pill.status-blocked { color: var(--status-blocked); background: var(--status-blocked-bg); border-color: color-mix(in srgb, var(--status-blocked) 35%, transparent); }
+    .task-main { flex: 1; min-width: 0; }
+    .task-title { font-weight: 600; font-size: .95rem; }
+    .task-body { color: var(--text-secondary); font-size: .87rem; margin-top: .25rem; }
+    .ref-badge {
+      flex: none; font-family: var(--font-mono); font-size: .72rem; color: var(--text-secondary);
+      border: 1px solid var(--border); border-radius: 6px; padding: .2rem .5rem; text-decoration: none;
+      margin-top: .1rem; white-space: nowrap;
+    }
+    .ref-badge:hover { color: var(--text-primary); border-color: var(--color-accent); text-decoration: none; }
+  </style>
+
+  <script>
+    const buttons = document.querySelectorAll<HTMLButtonElement>(".filter-btn");
+    const categories = document.querySelectorAll<HTMLElement>("[data-category]");
+
+    function applyFilter(filter: string) {
+      for (const category of categories) {
+        const tasks = category.querySelectorAll<HTMLElement>(".task");
+        let shown = 0;
+        for (const task of tasks) {
+          const match = filter === "all" || task.dataset.status === filter;
+          task.hidden = !match;
+          if (match) shown++;
+        }
+        const countEl = category.querySelector("[data-count]");
+        if (countEl) countEl.textContent = `${shown} of ${tasks.length} shown`;
+        category.hidden = shown === 0;
+      }
+    }
+
+    for (const btn of buttons) {
+      btn.addEventListener("click", () => {
+        for (const b of buttons) b.setAttribute("aria-pressed", String(b === btn));
+        applyFilter(btn.dataset.filter || "all");
+      });
+    }
+  </script>
+</Layout>
