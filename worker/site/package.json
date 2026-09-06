@@ -12,7 +12,7 @@
     "check": "npm run check:contrast && npm run check:a11y"
   },
   "dependencies": {
-    "astro": "^6.0.5"
+    "astro": "^7.3.1"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
