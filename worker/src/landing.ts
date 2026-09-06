@@ -2,11 +2,14 @@
 // Container instead (see index.ts). Kept as a plain string so serving it
 // never wakes the container; this is meant to load instantly.
 //
-// Styling follows the Bundu brand system (Mzizi design tokens: colors,
-// typography, spacing, radii — see mzizi_get_tokens). Bundu's own ecosystem
-// mineral is copper (#BF5A36 light / #FF8A65 dark), used here as the accent;
-// data-series colors use the "experimental" 7-hue set the tokens document as
-// built for exactly that (categorical/chart data).
+// Styling follows the Bundu brand system: colors and radii from the Mzizi
+// design tokens (mzizi_get_tokens) — copper (#BF5A36 light / #FF8A65 dark)
+// is Bundu's own ecosystem mineral, used here as the accent. Typography
+// matches bryanfawcett.com's actual type system rather than Mzizi's generic
+// Noto Sans/Serif defaults: Cormorant Garamond as the big display headline
+// (that site's --display, used for its huge uppercase hero text), IBM Plex
+// Serif for body copy, IBM Plex Mono for code — bryanfawcett.com has no
+// sans-serif at all, it's an all-serif editorial identity.
 export const LANDING_PAGE_HTML = `<!doctype html>
 <html lang="en">
 <head>
@@ -14,16 +17,17 @@ export const LANDING_PAGE_HTML = `<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>YNAB MCP Server</title>
 <meta name="description" content="A personal Model Context Protocol server connecting AI assistants to a YNAB budget.">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23BF5A36'/%3E%3Ctext x='32' y='41' font-family='Noto Sans, system-ui, sans-serif' font-weight='700' font-size='23' fill='%23FFFFFF' text-anchor='middle'%3E4C%3C/text%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23BF5A36'/%3E%3Ctext x='32' y='41' font-family='system-ui, sans-serif' font-weight='700' font-size='23' fill='%23FFFFFF' text-anchor='middle'%3E4C%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Noto+Sans:wght@400;500;600;700&family=Noto+Serif:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Serif:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    /* Bundu brand tokens — dark by default, overridden for light below */
-    --font-serif: "Noto Serif", Georgia, serif;
-    --font-sans: "Noto Sans", system-ui, -apple-system, sans-serif;
-    --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+    /* Bundu brand tokens — dark by default, overridden for light below.
+       Type matches bryanfawcett.com: an all-serif system, no sans-serif. */
+    --font-display: "Cormorant Garamond", ui-serif, Georgia, serif;
+    --font-serif: "IBM Plex Serif", ui-serif, Georgia, serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
 
     --color-copper: #FF8A65;      /* Bundu ecosystem identity mineral (dark) */
     --bg-base: #0E0D0C;
@@ -52,7 +56,7 @@ export const LANDING_PAGE_HTML = `<!doctype html>
     margin: 0;
     background: var(--bg-base);
     color: var(--text-primary);
-    font: 16px/1.6 var(--font-sans);
+    font: 16px/1.6 var(--font-serif);
   }
   main { max-width: 760px; margin: 0 auto; padding: 4rem 1.5rem 5rem; }
   .badge {
@@ -62,9 +66,10 @@ export const LANDING_PAGE_HTML = `<!doctype html>
   }
   .badge .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-copper); }
   h1 {
-    font-family: var(--font-serif); font-weight: 700;
-    font-size: clamp(2.25rem, 5vw, 3.75rem); /* Display Small */
-    line-height: 1.1; margin: 0 0 1rem; letter-spacing: -0.01em;
+    font-family: var(--font-display); font-weight: 700;
+    text-transform: uppercase; letter-spacing: .01em;
+    font-size: clamp(2.75rem, 4vw + 1.5rem, 5.5rem);
+    line-height: .95; margin: 0 0 1rem;
   }
   h1 span { color: var(--color-copper); }
   p.lede { color: var(--text-secondary); font-size: 1.125rem; max-width: 60ch; margin: 0 0 2.5rem; }

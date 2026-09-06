@@ -40,13 +40,16 @@ DASHBOARD_HTML = """<!doctype html>
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Noto+Sans:wght@400;500;600;700&family=Noto+Serif:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Serif:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     /* Bundu brand tokens (dark by default; light overrides below) */
-    --font-serif: "Noto Serif", Georgia, serif;
-    --font-sans: "Noto Sans", system-ui, -apple-system, sans-serif;
-    --font-mono: "JetBrains Mono", ui-monospace, monospace;
+    /* Matches bryanfawcett.com's all-serif type system, not Mzizi's generic
+       Noto defaults: Cormorant Garamond for the display heading, IBM Plex
+       Serif for body copy (no sans-serif at all), IBM Plex Mono for figures. */
+    --font-display: "Cormorant Garamond", ui-serif, Georgia, serif;
+    --font-serif: "IBM Plex Serif", ui-serif, Georgia, serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
     --color-accent: #FF8A65;   /* Bundu ecosystem mineral: copper (dark) */
     --color-bg: #0E0D0C;
@@ -107,12 +110,12 @@ DASHBOARD_HTML = """<!doctype html>
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    font-family: var(--font-sans);
+    font-family: var(--font-serif);
     background: var(--color-bg);
     color: var(--color-text-primary);
     padding: 16px;
   }
-  h1 { font-family: var(--font-serif); font-weight: 700; font-size: 1.25rem; margin: 0 0 2px; }
+  h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.6rem; margin: 0 0 2px; }
   .subtitle { color: var(--color-text-secondary); font-size: .85rem; margin: 0 0 16px; }
   .kpi-row {
     display: grid;
@@ -140,7 +143,7 @@ DASHBOARD_HTML = """<!doctype html>
     .chart-row { grid-template-columns: 1fr; }
   }
   .chart-card { height: 240px; }
-  .chart-card h2, .table-card h2 { font-family: var(--font-sans); font-size: .85rem; margin: 0 0 8px; color: var(--color-text-secondary); font-weight: 600; }
+  .chart-card h2, .table-card h2 { font-family: var(--font-serif); font-size: .85rem; margin: 0 0 8px; color: var(--color-text-secondary); font-weight: 600; }
   .chart-card .chart-wrap { position: relative; height: 190px; }
   .table-card { margin-bottom: 12px; }
   table { width: 100%; border-collapse: collapse; font-size: .82rem; }
@@ -252,7 +255,7 @@ function render(data) {
   const palette = chartPalette();
   Chart.defaults.color = textColor;
   Chart.defaults.borderColor = gridColor;
-  Chart.defaults.font.family = bodyStyle.getPropertyValue("--font-sans").trim() || bodyStyle.fontFamily;
+  Chart.defaults.font.family = bodyStyle.getPropertyValue("--font-serif").trim() || bodyStyle.fontFamily;
 
   const groups = data.category_groups || [];
   charts.push(new Chart(document.getElementById("groupsChart"), {
