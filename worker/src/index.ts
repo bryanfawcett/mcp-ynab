@@ -27,12 +27,28 @@ export class YnabMcpContainer extends Container<Env> {
 // Worker and the Python app agree on what identifies a caller: an
 // `Authorization: Bearer <token>` header, falling back to a `?token=` query
 // param (for clients, like Claude.ai's custom connector UI, that can only
-// supply a URL).
+// supply a URL). Splits on the first space only (mirroring Python's
+// `.partition(" ")`) and never falls back to the query param once the scheme
+// is "bearer" — even an empty token after "Bearer" is treated as presented
+// (and rejected downstream), not as "no header, try the query param instead".
 function presentedToken(request: Request): string {
   const auth = request.headers.get("authorization") ?? "";
-  const [scheme, token] = auth.split(" ", 2);
-  if (scheme?.toLowerCase() === "bearer" && token) return token;
+  const spaceIndex = auth.indexOf(" ");
+  const scheme = spaceIndex === -1 ? auth : auth.slice(0, spaceIndex);
+  if (scheme.toLowerCase() === "bearer") {
+    return spaceIndex === -1 ? "" : auth.slice(spaceIndex + 1);
+  }
   return new URL(request.url).searchParams.get("token") ?? "";
+}
+
+// Matches the truthy strings pydantic's `bool` accepts for MCP_MULTI_TENANT
+// (src/config.py) — "true"/"1"/"yes"/"on"/"y"/"t", case-insensitive — so an
+// operator setting the secret to e.g. "True" or "1" (both valid there)
+// doesn't silently keep every tenant on the single shared container here
+// while the Python app itself is genuinely running in multi-tenant mode.
+const TRUTHY = new Set(["true", "1", "yes", "on", "y", "t"]);
+function isMultiTenant(env: Env): boolean {
+  return TRUTHY.has((env.MCP_MULTI_TENANT ?? "").trim().toLowerCase());
 }
 
 // A stable, non-reversible id for whichever container instance should serve
@@ -63,7 +79,7 @@ export default {
       // matching its one-account model (and an unauthenticated request, in
       // either mode, falls through to that same shared instance, where the
       // Python app's own auth check rejects it).
-      const containerId = env.MCP_MULTI_TENANT === "true" ? await tenantContainerId(request) : undefined;
+      const containerId = isMultiTenant(env) ? await tenantContainerId(request) : undefined;
       const container = getContainer(env.YNAB_MCP_CONTAINER, containerId);
       return container.fetch(request);
     }
