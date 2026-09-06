@@ -11,6 +11,7 @@ interface Env {
   MCP_AUTH_TOKEN?: string;
   MCP_MULTI_TENANT?: string;
   MCP_RATE_LIMITER: RateLimit;
+  CF_VERSION_METADATA: WorkerVersionMetadata;
 }
 
 export class YnabMcpContainer extends Container<Env> {
@@ -106,7 +107,18 @@ export default {
       // Always the shared/default instance — a liveness check isn't tied to
       // any one tenant.
       const container = getContainer(env.YNAB_MCP_CONTAINER);
-      return container.fetch(request);
+      const response = await container.fetch(request);
+      // Which Worker version actually answered — the question we had no
+      // answer to while debugging the container naming conflict, where a
+      // deploy could "succeed" on the Worker side while the container half
+      // silently failed. This is the Worker's own version, not the
+      // container image's — the two deploy together but aren't the same
+      // artifact, so a mismatch between what you expect here and the image
+      // tag in the Cloudflare dashboard's container logs is itself a signal.
+      const headers = new Headers(response.headers);
+      headers.set("X-Worker-Version-Id", env.CF_VERSION_METADATA.id);
+      headers.set("X-Worker-Version-Tag", env.CF_VERSION_METADATA.tag || "untagged");
+      return new Response(response.body, { status: response.status, headers });
     }
 
     // Everything else (/, /privacy-policy) is the static site built from
