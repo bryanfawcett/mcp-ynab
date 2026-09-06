@@ -90,9 +90,12 @@ Requires `YNAB_API_KEY` in `.env.local` for running the server.
 ## Remote deployment (Cloudflare Container + Worker)
 
 For connecting Claude web (or any client that needs a remote MCP server rather
-than a local stdio process), `worker/` deploys the same Python server, unchanged,
-behind a Cloudflare Container and a small routing Worker, at
-`https://budget.bryanfawcett.com/mcp`.
+than a local stdio process), `worker/` deploys the same Python server,
+unchanged, behind a Cloudflare Container and a small routing Worker, on a
+subdomain of your choosing — e.g. this fork's own instance runs at
+`https://budget.bryanfawcett.com/mcp`, but nothing below is tied to that
+domain or account. Fork this repo, point the pieces below at your own domain
+and Cloudflare account, and you have your own private remote instance.
 
 The Python server itself just gained a second transport
 (`src/server/http.py`, streamable-http instead of stdio); `worker/Dockerfile`
@@ -105,14 +108,19 @@ git-integration requires the Wrangler config and Dockerfile to share a root
 directory, and this keeps both deploy paths below working from the same
 layout.)
 
-`worker/wrangler.jsonc` declares `budget.bryanfawcett.com` as a [Custom
-Domain](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/)
-rather than a path-scoped [Route](https://developers.cloudflare.com/workers/configuration/routing/routes/)
-— this Worker is meant to be the only thing on that subdomain, so Cloudflare
-manages the DNS record and certificate for it automatically; no DNS setup
-needed. (If that ever changes and something else needs to share the
-subdomain, switch to a Route scoped to `/mcp*` instead — see the comment in
-`wrangler.jsonc`.)
+**Before your first deploy**, edit `worker/wrangler.jsonc` for your own setup:
+
+- `name` — the Worker's name in your Cloudflare account. Whatever you pick
+  here is also what you'll name the Worker in the dashboard (Option B below
+  checks that the two match).
+- `routes[0].pattern` — your own subdomain (e.g. `mcp.yourdomain.com`)
+  instead of `budget.bryanfawcett.com`. This repo declares it as a [Custom
+  Domain](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/)
+  rather than a path-scoped [Route](https://developers.cloudflare.com/workers/configuration/routing/routes/),
+  on the assumption that the Worker is the only thing on that subdomain —
+  Cloudflare then manages the DNS record and certificate for it
+  automatically, no DNS setup needed. If you'd rather share the subdomain
+  with something else, switch this to a Route scoped to `/mcp*` instead.
 
 **One-time setup:**
 
@@ -136,11 +144,11 @@ subdomain, switch to a Route scoped to `/mcp*` instead — see the comment in
    (Secrets aren't read from `wrangler.jsonc` — see the [Container secrets guide](https://developers.cloudflare.com/containers/examples/env-vars-and-secrets/).
    `wrangler deploy` builds the image via your local Docker.)
 
-   **Option B — connect the repo in the Cloudflare dashboard (Workers Builds),
-   so it deploys automatically:**
-   1. Create a Worker named exactly `mcp-ynab` (must match `"name"` in
-      `worker/wrangler.jsonc`, or the build fails), then go to its
-      **Settings → Builds → Connect** and pick this GitHub repo.
+   **Option B — connect your fork in the Cloudflare dashboard (Workers
+   Builds), so it deploys automatically on every push to `main`:**
+   1. Create a Worker with the same name you set in `worker/wrangler.jsonc`'s
+      `"name"` field (they must match, or the build fails), then go to its
+      **Settings → Builds → Connect** and pick your fork of this repo.
    2. Set **Root directory** to `worker` — Cloudflare's git-integration builds
       a Dockerfile only when it's under the configured root directory, which
       is why it lives at `worker/Dockerfile` rather than the repo root.
@@ -155,7 +163,7 @@ subdomain, switch to a Route scoped to `/mcp*` instead — see the comment in
    6. Push to `main` to trigger the first build — it can take several minutes
       while Cloudflare provisions the container image.
 4. In Claude web (**Settings → Connectors → Add custom connector**), use
-   `https://budget.bryanfawcett.com/mcp?token=<MCP_AUTH_TOKEN>` as the URL —
+   `https://<your-domain>/mcp?token=<MCP_AUTH_TOKEN>` as the URL —
    as of this writing, Claude.ai's custom connector UI only has fields for
    OAuth (Authorization/Token URL, Client ID/Secret), not a static header
    ([anthropics/claude-ai-mcp#112](https://github.com/anthropics/claude-ai-mcp/issues/112)),
