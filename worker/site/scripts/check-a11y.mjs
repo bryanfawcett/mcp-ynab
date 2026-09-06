@@ -13,7 +13,7 @@ import { extname, join, relative as relativePath, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const DIST = fileURLToPath(new URL("../dist", import.meta.url));
-const PAGES = ["/", "/project", "/privacy-policy"];
+const PAGES = ["/", "/project", "/status", "/privacy-policy"];
 const MIME = { ".html": "text/html", ".css": "text/css", ".js": "application/javascript", ".svg": "image/svg+xml" };
 
 // Builds a URL-path -> absolute-file-path map by walking `root` once, using
@@ -76,6 +76,25 @@ async function main() {
   try {
     for (const path of PAGES) {
       const page = await context.newPage();
+      // /status fetches live uptime data from GitHub's raw content CDN at
+      // runtime. Letting that hit the real network here would make this
+      // check slow (waits out a real HTTP timeout in a sandboxed/offline
+      // run) and flaky in CI (depends on GitHub being reachable) for a
+      // check that has nothing to do with that data's availability — mock
+      // it as "not found yet" so the page's own empty-state UI, not a live
+      // fetch, is what gets audited.
+      await page.route("https://raw.githubusercontent.com/**", (route) =>
+        route.fulfill({ status: 404, contentType: "text/plain", body: "Not Found" }),
+      );
+      // Every page also loads the Intercom Messenger widget (Layout.astro),
+      // which fetches its own script/iframe from Intercom's CDN — same
+      // problem as above (slow/flaky real network dependency for a check
+      // that's auditing our own markup, not Intercom's), so cut it off too.
+      await page.route(/intercom(cdn)?\.io\//, (route) => route.abort());
+      // Same for Google Fonts (fonts.googleapis.com/fonts.gstatic.com):
+      // axe checks structural/semantic accessibility, not font rendering,
+      // so there's nothing to gain from a real fetch here either.
+      await page.route(/fonts\.(googleapis|gstatic)\.com\//, (route) => route.abort());
       await page.goto(base + path, { waitUntil: "networkidle" });
       const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "best-practice"]).analyze();
       await page.close();

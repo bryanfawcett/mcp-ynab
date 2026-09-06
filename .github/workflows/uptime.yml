@@ -1,0 +1,40 @@
+name: Uptime check
+
+# Upptime-style: no third-party monitoring account, no self-hosted cron
+# infra — just this workflow pinging each target on a schedule and
+# committing the result to data/uptime/*.json. worker/site's /status page
+# fetches those files straight from GitHub's raw content CDN at runtime, so
+# these commits never need to trigger a site rebuild/redeploy.
+#
+# Deliberately outside worker/ (this repo's Workers Builds root directory)
+# so these frequent, code-free commits don't land inside its watched paths
+# and trigger a full container rebuild every 10 minutes.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: uptime-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: python scripts/uptime_check.py
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/uptime
+          git diff --cached --quiet && exit 0
+          git commit -m "Record uptime check [skip ci]"
+          git push

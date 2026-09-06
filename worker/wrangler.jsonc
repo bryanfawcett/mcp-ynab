@@ -34,6 +34,22 @@
   },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["YnabMcpContainer"] }],
 
+  // Plain vars, not secrets: neither value is a credential (an OAuth client
+  // ID is meant to be public — it's exposed in the browser's redirect URL on
+  // every authorize request regardless; an account ID is just an identifier,
+  // same reasoning as OAUTH_KV_NAMESPACE_ID being a literal in index.ts).
+  // Putting them here instead of behind `wrangler secret put`/`versions
+  // secret put` means every deploy path (a plain `wrangler deploy`, a
+  // gradual `versions upload`+`deploy`, or Workers Builds) carries them
+  // automatically since they're part of source control — no more silent
+  // loss from a deploy that clones the wrong "latest version" lineage,
+  // which is what kept wiping them when they lived as versioned secrets.
+  // The real credential, YNAB_OAUTH_CLIENT_SECRET, stays a secret.
+  "vars": {
+    "CLOUDFLARE_ACCOUNT_ID": "125a2dfbc21f76a25c980609609e8218",
+    "YNAB_OAUTH_CLIENT_ID": "5eynM1IcwPgPZH-Rc9SS4FyvY3h8Nc7ViXJnb5mMTVY"
+  },
+
   // Protects the container from a single caller hammering /mcp — keyed per
   // caller (a hash of their presented token, same as the per-tenant container
   // routing below) rather than per-IP, so one misbehaving tenant can't burn

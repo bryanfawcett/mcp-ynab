@@ -57,24 +57,46 @@ import Layout from "../layouts/Layout.astro";
   <h2>Connecting</h2>
   <div class="card">
     <p style="margin:0 0 1rem;">
-      Every request needs a bearer token — and here, that token is your own
-      <a href="https://app.ynab.com/settings/developer" target="_blank" rel="noopener">YNAB personal access token</a>,
-      not a password for this site. It's used only to make YNAB API calls on your behalf, for
-      that request; nobody else's budget is visible to you and yours isn't visible to them.
+      Every request runs as you — nobody else's budget is visible to you, and yours isn't
+      visible to them. Two ways to prove that: sign in with YNAB directly (no token to copy),
+      or paste your own YNAB personal access token.
     </p>
+
+    <h3 style="font-family:var(--font-serif); font-weight:600; font-size:1.05rem; margin:0 0 .6rem;">Option A — Sign in with YNAB (recommended)</h3>
+    <p style="margin:0 0 .6rem;">In Claude web: <b>Settings → Connectors → Add custom connector</b>.</p>
+    <ol style="margin:0 0 1.25rem; padding-left:1.4rem; color:var(--text-secondary);">
+      <li style="margin-bottom:.4rem;">Paste the MCP endpoint above (no <code>?token=</code>) as the server URL.</li>
+      <li style="margin-bottom:.4rem;">Under <b>Authentication</b>, leave <b>Always required</b> selected.</li>
+      <li style="margin-bottom:.4rem;">Under <b>OAuth client</b>, pick <b>No client ID — register one automatically</b>.
+        This server supports Dynamic Client Registration, not Anthropic's hosted client
+        metadata option above it — picking that one instead is what produces
+        "Couldn't determine the server settings".</li>
+      <li>Click <b>Add</b>, then <b>Connect</b> — you'll land on YNAB's own sign-in page to
+        authorize access, then bounce back connected. No token ever touches this site.</li>
+    </ol>
+
+    <h3 style="font-family:var(--font-serif); font-weight:600; font-size:1.05rem; margin:0 0 .6rem;">Option B — Your own token</h3>
     <p style="margin:0 0 1rem;">
-      In Claude web (<b>Settings → Connectors → Add custom connector</b>), use the
-      MCP endpoint above with <code>?token=&lt;your-YNAB-token&gt;</code> appended; clients that
-      support custom headers can send <code>Authorization: Bearer &lt;your-YNAB-token&gt;</code>
-      instead.
+      For clients without a full OAuth UI (or if you'd rather not use it), get a
+      <a href="https://app.ynab.com/settings/developer" target="_blank" rel="noopener">YNAB personal access token</a>
+      and use the MCP endpoint above with <code>?token=&lt;your-YNAB-token&gt;</code> appended;
+      clients that support custom headers can send
+      <code>Authorization: Bearer &lt;your-YNAB-token&gt;</code> instead. It's used only to make
+      YNAB API calls on your behalf, per request — never stored.
     </p>
-    <p style="margin:0;">
+
+    <p style="margin:0 0 1rem;">
       Running the open-source server yourself instead — for just you, or for others under
       your own domain? See
       <a href="https://github.com/bryanfawcett/mcp-ynab" target="_blank" rel="noopener">this fork</a>'s
       README for the Cloudflare deployment, or
       <a href="https://mcp-ynab.com" target="_blank" rel="noopener">mcp-ynab.com</a> for the local
       stdio setup (Claude Desktop, Claude Code, ChatGPT).
+    </p>
+
+    <p style="margin:0; color:var(--text-secondary);">
+      Stuck, or something not working? Use the chat bubble in the corner, or email
+      <a href="mailto:support@nyuchi.com">support@nyuchi.com</a>.
     </p>
   </div>
 

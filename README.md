@@ -166,11 +166,18 @@ alive at once; raise it if you expect more concurrent users).
      namespace (`npx wrangler kv namespace create oauth`, then add the
      printed `id` to `wrangler.jsonc`'s `kv_namespaces` binding) for durable
      token storage, since the container's own disk doesn't survive an idle
-     sleep. Set `YNAB_OAUTH_CLIENT_ID`, `YNAB_OAUTH_CLIENT_SECRET`,
-     `CLOUDFLARE_ACCOUNT_ID`, and `CLOUDFLARE_KV_API_TOKEN` (a token scoped to
-     Workers KV Storage:Edit only — not your Cloudflare account token) as
-     secrets below. Entirely additive: leaving these unset keeps the
-     deployment on the PAT-only flow above. See `src/server/oauth.py`.
+     sleep. Set `YNAB_OAUTH_CLIENT_ID` and `CLOUDFLARE_ACCOUNT_ID` directly in
+     `wrangler.jsonc`'s `vars` — neither is a credential (an OAuth client ID
+     is meant to be public; an account ID is just an identifier), and putting
+     them in source control means every deploy path carries them
+     automatically instead of risking loss the way a versioned secret can
+     when different deploy paths (a plain deploy, a gradual `versions
+     upload`/`deploy`, Workers Builds) clone from different version
+     lineages. Set `YNAB_OAUTH_CLIENT_SECRET` and `CLOUDFLARE_KV_API_TOKEN`
+     (a token scoped to Workers KV Storage:Edit only — not your Cloudflare
+     account token) as secrets below — those two are real credentials.
+     Entirely additive: leaving these unset keeps the deployment on the
+     PAT-only flow above. See `src/server/oauth.py`.
 2. Requires a Workers **Paid** plan (Containers require it) and, for the
    Docker-build step below, either [Docker](https://docs.docker.com/get-started/get-docker/)
    locally or Cloudflare's own build environment — pick one:
@@ -182,15 +189,16 @@ alive at once; raise it if you expect more concurrent users).
    npx wrangler secret put YNAB_API_KEY              # single-tenant only
    npx wrangler secret put MCP_AUTH_TOKEN            # single-tenant only
    npx wrangler secret put MCP_MULTI_TENANT          # multi-tenant only — value: true
-   npx wrangler secret put YNAB_OAUTH_CLIENT_ID      # OAuth only
    npx wrangler secret put YNAB_OAUTH_CLIENT_SECRET  # OAuth only
-   npx wrangler secret put CLOUDFLARE_ACCOUNT_ID     # OAuth only
    npx wrangler secret put CLOUDFLARE_KV_API_TOKEN   # OAuth only
    npm run deploy
    ```
    (Secrets aren't read from `wrangler.jsonc` — see the [Container secrets guide](https://developers.cloudflare.com/containers/examples/env-vars-and-secrets/).
-   `npm run deploy` builds the Astro site in `worker/site` first, then runs
-   `wrangler deploy`, which builds the container image via your local Docker.)
+   For OAuth, also edit `YNAB_OAUTH_CLIENT_ID` and `CLOUDFLARE_ACCOUNT_ID` into
+   `wrangler.jsonc`'s `vars` directly — see the note above on why those two
+   aren't secrets. `npm run deploy` builds the Astro site in `worker/site`
+   first, then runs `wrangler deploy`, which builds the container image via
+   your local Docker.)
 
    **Option B — connect your fork in the Cloudflare dashboard (Workers
    Builds), so it deploys automatically on every push to `main`:**
@@ -208,10 +216,20 @@ alive at once; raise it if you expect more concurrent users).
    4. Set **Production branch** to `main` under **Settings → Builds**. Without
       this, Workers Builds deploys to *production* off of every push to
       *every* branch — including work-in-progress PR branches — rather than
-      only after a merge to `main`.
+      only after a merge to `main`. Leave **Builds for non-production
+      branches** unchecked: its "Version command" runs from the repo root
+      regardless of the Root directory setting above, so on this repo's
+      layout it always fails with "Missing entry-point" — there's no
+      per-branch override to fix that with. The equivalent check (does the
+      Worker actually deploy cleanly) runs in CI instead, as the
+      `worker-deploy-dryrun` job.
    5. Under the Worker's **Settings → Variables & Secrets**, add either
       `YNAB_API_KEY` and `MCP_AUTH_TOKEN` (single-tenant) or `MCP_MULTI_TENANT`
-      set to `true` (multi-tenant) as secrets.
+      set to `true` (multi-tenant) as secrets. For OAuth, add
+      `YNAB_OAUTH_CLIENT_SECRET` and `CLOUDFLARE_KV_API_TOKEN` as secrets here
+      too — but edit `YNAB_OAUTH_CLIENT_ID`/`CLOUDFLARE_ACCOUNT_ID` into
+      `wrangler.jsonc`'s `vars` instead of the dashboard, so they're versioned
+      with your fork rather than living only in the dashboard.
    6. Push to `main` to trigger the first build — it can take several minutes
       while Cloudflare provisions the container image.
 4. Connecting a client (**Settings → Connectors → Add custom connector** in

@@ -1,0 +1,106 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { REPO } from "../data/roadmap.ts";
+
+const TARGETS = [
+  { key: "worker", title: "Worker", description: "The Cloudflare Worker fronting everything on ynab.nyuchi.com." },
+  { key: "tools", title: "Tools", description: "The MCP endpoint that serves every tool call." },
+  { key: "ynab-api", title: "YNAB API", description: "YNAB's own API — outside our control, checked for transparency." },
+  { key: "auth", title: "Auth", description: "The OAuth discovery endpoint used by “Sign in with YNAB”." },
+];
+---
+<Layout
+  title="Status — Nyuchi MCP for YNAB"
+  description="Live uptime for the Worker, tools, YNAB API, and auth behind Nyuchi MCP for YNAB."
+>
+  <nav aria-label="Breadcrumb" style="font-size:.82rem; margin-bottom:1.5rem;">
+    <ol style="list-style:none; display:flex; gap:.5rem; margin:0; padding:0; color:var(--text-secondary);">
+      <li><a href="/">Home</a></li>
+      <li aria-hidden="true">/</li>
+      <li aria-current="page" style="color:var(--text-primary);">Status</li>
+    </ol>
+  </nav>
+
+  <p class="eyebrow">Nyuchi MCP for YNAB &middot; Status</p>
+  <h1 class="board-title">Status</h1>
+  <p class="lede" style="margin-bottom:2.5rem;">
+    Checked every 10 minutes by a scheduled job in <a href={`https://github.com/${REPO}`} target="_blank" rel="noopener">the open-source repo</a> itself
+    &mdash; no third-party monitoring account, the check history is just data committed alongside the code.
+    Each bar is one check, most recent on the right; hover a bar for its exact time.
+  </p>
+
+  {TARGETS.map((target) => (
+    <div class="uptime-card" data-target={target.key}>
+      <div class="uptime-info">
+        <div class="uptime-title">{target.title}</div>
+        <div class="uptime-desc">{target.description}</div>
+      </div>
+      <div class="uptime-right">
+        <div class="uptime-bars" aria-hidden="true"></div>
+        <div class="uptime-pct">&nbsp;</div>
+      </div>
+    </div>
+  ))}
+
+  <style>
+    /* Matches project.astro's own eyebrow/title treatment — duplicated
+       rather than shared since Astro scopes a page's <style> to only the
+       elements that page renders. */
+    .eyebrow {
+      font-family: var(--font-mono); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase;
+      color: var(--color-accent); margin: 0 0 .5rem;
+    }
+    .board-title {
+      text-transform: none; letter-spacing: normal;
+      font-size: clamp(2rem, 3vw + 1.2rem, 3rem); margin: 0 0 .75rem;
+    }
+
+    .uptime-card {
+      display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap;
+      background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+      padding: 1.25rem 1.5rem; margin: 1rem 0;
+    }
+    .uptime-title { font-weight: 600; margin-bottom: .2rem; }
+    .uptime-desc { color: var(--text-secondary); font-size: .85rem; max-width: 40ch; }
+    .uptime-right { display: flex; flex-direction: column; align-items: flex-end; gap: .35rem; }
+    .uptime-bars { display: flex; align-items: flex-end; gap: 2px; height: 28px; }
+    .uptime-bars .bar { width: 4px; height: 100%; border-radius: 2px; background: var(--border); cursor: default; }
+    .uptime-bars .bar.up { background: var(--status-done); }
+    .uptime-bars .bar.down { background: var(--status-blocked); }
+    .uptime-pct { font-size: .78rem; color: var(--text-secondary); font-family: var(--font-mono); }
+    .uptime-empty { color: var(--text-secondary); font-size: .8rem; font-style: italic; }
+  </style>
+
+  <script define:vars={{ REPO, targets: TARGETS.map((t) => t.key) }}>
+    async function loadTarget(key) {
+      const card = document.querySelector(`[data-target="${key}"]`);
+      const barsEl = card.querySelector(".uptime-bars");
+      const pctEl = card.querySelector(".uptime-pct");
+      try {
+        const res = await fetch(`https://raw.githubusercontent.com/${REPO}/main/data/uptime/${key}.json`, { cache: "no-store" });
+        if (!res.ok) throw new Error(String(res.status));
+        const history = await res.json();
+        if (!Array.isArray(history) || history.length === 0) throw new Error("empty");
+
+        barsEl.replaceChildren();
+        for (const entry of history) {
+          const bar = document.createElement("div");
+          bar.className = `bar ${entry.up ? "up" : "down"}`;
+          const when = new Date(entry.t).toLocaleString();
+          bar.title = `${when} — ${entry.up ? "up" : "down"}${entry.status ? ` (HTTP ${entry.status})` : ""}`;
+          barsEl.appendChild(bar);
+        }
+        const upCount = history.filter((e) => e.up).length;
+        pctEl.textContent = `${((upCount / history.length) * 100).toFixed(1)}% up, last ${history.length} checks`;
+      } catch {
+        barsEl.replaceChildren();
+        const empty = document.createElement("div");
+        empty.className = "uptime-empty";
+        empty.textContent = "No data yet — checks run every 10 minutes.";
+        barsEl.appendChild(empty);
+        pctEl.textContent = "";
+      }
+    }
+    for (const key of targets) loadTarget(key);
+  </script>
+</Layout>
