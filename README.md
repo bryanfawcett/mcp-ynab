@@ -159,6 +159,18 @@ alive at once; raise it if you expect more concurrent users).
    - **Multi-tenant:** nothing to generate — you'll set `MCP_MULTI_TENANT=true`
      as a secret below instead of `YNAB_API_KEY`/`MCP_AUTH_TOKEN`, and each
      caller brings their own YNAB token.
+   - **Multi-tenant + OAuth (optional, on top of the above):** lets a caller
+     "Sign in with YNAB" instead of pasting a personal access token. Needs a
+     [YNAB OAuth application](https://api.ynab.com/#oauth-applications) (redirect
+     URI: `https://<your-domain>/oauth/ynab/callback`) and a Cloudflare KV
+     namespace (`npx wrangler kv namespace create oauth`, then add the
+     printed `id` to `wrangler.jsonc`'s `kv_namespaces` binding) for durable
+     token storage, since the container's own disk doesn't survive an idle
+     sleep. Set `YNAB_OAUTH_CLIENT_ID`, `YNAB_OAUTH_CLIENT_SECRET`,
+     `CLOUDFLARE_ACCOUNT_ID`, and `CLOUDFLARE_KV_API_TOKEN` (a token scoped to
+     Workers KV Storage:Edit only — not your Cloudflare account token) as
+     secrets below. Entirely additive: leaving these unset keeps the
+     deployment on the PAT-only flow above. See `src/server/oauth.py`.
 2. Requires a Workers **Paid** plan (Containers require it) and, for the
    Docker-build step below, either [Docker](https://docs.docker.com/get-started/get-docker/)
    locally or Cloudflare's own build environment — pick one:
@@ -167,9 +179,13 @@ alive at once; raise it if you expect more concurrent users).
    ```bash
    cd worker
    npm install
-   npx wrangler secret put YNAB_API_KEY      # single-tenant only
-   npx wrangler secret put MCP_AUTH_TOKEN    # single-tenant only
-   npx wrangler secret put MCP_MULTI_TENANT  # multi-tenant only — value: true
+   npx wrangler secret put YNAB_API_KEY              # single-tenant only
+   npx wrangler secret put MCP_AUTH_TOKEN            # single-tenant only
+   npx wrangler secret put MCP_MULTI_TENANT          # multi-tenant only — value: true
+   npx wrangler secret put YNAB_OAUTH_CLIENT_ID      # OAuth only
+   npx wrangler secret put YNAB_OAUTH_CLIENT_SECRET  # OAuth only
+   npx wrangler secret put CLOUDFLARE_ACCOUNT_ID     # OAuth only
+   npx wrangler secret put CLOUDFLARE_KV_API_TOKEN   # OAuth only
    npm run deploy
    ```
    (Secrets aren't read from `wrangler.jsonc` — see the [Container secrets guide](https://developers.cloudflare.com/containers/examples/env-vars-and-secrets/).
@@ -210,6 +226,12 @@ alive at once; raise it if you expect more concurrent users).
    - **Multi-tenant:** `https://<your-domain>/mcp?token=<your-own-YNAB-personal-access-token>`
      — each person uses their own [YNAB personal access
      token](https://app.ynab.com/settings/developer) here, not a value you hand out.
+   - **Multi-tenant + OAuth:** if the OAuth secrets above are set, a client
+     that *does* support OAuth (Claude.ai's connector UI, for one) can instead
+     be pointed at the MCP endpoint with no token in the URL at all — it
+     discovers `https://<your-domain>/.well-known/oauth-authorization-server`,
+     registers itself, and walks the caller through "Sign in with YNAB"
+     directly. The plain `?token=` flows above still work unchanged either way.
 
 The container's SQLite cache lives on ephemeral disk and rebuilds itself after
 a cold start (same cache the stdio transport uses); nothing to configure

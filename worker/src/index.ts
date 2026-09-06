@@ -10,9 +10,26 @@ interface Env {
   YNAB_API_KEY?: string;
   MCP_AUTH_TOKEN?: string;
   MCP_MULTI_TENANT?: string;
+  // OAuth proxy (src/server/oauth.py) — all four optional; leaving any unset
+  // keeps the deployment on the PAT-only flow. The Container reaches the
+  // OAUTH_KV namespace over its REST API (a Container is separate compute
+  // from the Worker, so it can't use the native `env.OAUTH_KV` binding
+  // below), hence a scoped API token rather than the binding itself.
+  YNAB_OAUTH_CLIENT_ID?: string;
+  YNAB_OAUTH_CLIENT_SECRET?: string;
+  CLOUDFLARE_ACCOUNT_ID?: string;
+  CLOUDFLARE_KV_API_TOKEN?: string;
   MCP_RATE_LIMITER: RateLimit;
   CF_VERSION_METADATA: WorkerVersionMetadata;
 }
+
+// Not a secret (just an id, not a credential) and stable, so it's a literal
+// here rather than a secret — must match wrangler.jsonc's kv_namespaces
+// binding id. The Worker itself has no need to touch this KV namespace
+// directly (only the Python container does, over the REST API above), so
+// there's no `OAUTH_KV` binding used in this file despite one being declared
+// in wrangler.jsonc.
+const OAUTH_KV_NAMESPACE_ID = "afc28b10107f4fc591857970d92dc62c";
 
 export class YnabMcpContainer extends Container<Env> {
   defaultPort = 8080;
@@ -21,6 +38,11 @@ export class YnabMcpContainer extends Container<Env> {
     YNAB_API_KEY: this.env.YNAB_API_KEY ?? "",
     MCP_AUTH_TOKEN: this.env.MCP_AUTH_TOKEN ?? "",
     MCP_MULTI_TENANT: this.env.MCP_MULTI_TENANT ?? "",
+    YNAB_OAUTH_CLIENT_ID: this.env.YNAB_OAUTH_CLIENT_ID ?? "",
+    YNAB_OAUTH_CLIENT_SECRET: this.env.YNAB_OAUTH_CLIENT_SECRET ?? "",
+    CLOUDFLARE_ACCOUNT_ID: this.env.CLOUDFLARE_ACCOUNT_ID ?? "",
+    CLOUDFLARE_KV_NAMESPACE_ID: OAUTH_KV_NAMESPACE_ID,
+    CLOUDFLARE_KV_API_TOKEN: this.env.CLOUDFLARE_KV_API_TOKEN ?? "",
   };
 }
 
