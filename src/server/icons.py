@@ -41,17 +41,19 @@ def _icon(glyph: str) -> Icon:
     return Icon(src=_data_uri(svg), mime_type="image/svg+xml", sizes=["any"])
 
 
-# Server-level icon — the same "4C" copper monogram as the favicon
-# (worker/src/landing.ts), just here for MCP clients that show a server icon.
-SERVER = Icon(
-    src=_data_uri(
-        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'
-        f'<rect width="64" height="64" rx="14" fill="{_GOLD}"/>'
-        '<text x="32" y="41" font-family="system-ui, sans-serif" font-weight="700" '
-        'font-size="23" fill="#5D4037" text-anchor="middle">4C</text></svg>'
-    ),
-    mime_type="image/svg+xml",
-    sizes=["any"],
+# Server-level icon — Nyuchi's actual bee mark (the same glyph as
+# worker/site's favicon/header), for MCP clients that show a server icon.
+# "Nyuchi" is Shona for "Bee" — this is the literal brand mark, not a
+# monogram standing in for it.
+SERVER = _icon(
+    '<path d="M9.3 7.2Q8 5.6 6.9 6.6M10.4 7.9Q9.4 6.1 8.7 7.2" '
+    'stroke="#5D4037" stroke-width="0.9" fill="none" stroke-linecap="round"/>'
+    '<circle cx="10" cy="8.6" r="2.3" fill="#5D4037"/>'
+    '<ellipse cx="17.5" cy="8.6" rx="3.7" ry="2.1" transform="rotate(18 17.5 8.6)" '
+    'fill="#5D4037" opacity="0.55"/>'
+    '<ellipse cx="16.2" cy="13.5" rx="5.6" ry="3.1" transform="rotate(33 16.2 13.5)" fill="#5D4037"/>'
+    f'<rect x="12.3" y="10.6" width="1.5" height="6.2" transform="rotate(33 13.05 13.7)" fill="{_GOLD}"/>'
+    f'<rect x="15.3" y="10.6" width="1.5" height="6.2" transform="rotate(33 16.05 13.7)" fill="{_GOLD}"/>'
 )
 
 USER = _icon(
