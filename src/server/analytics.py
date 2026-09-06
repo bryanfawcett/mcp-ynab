@@ -3,13 +3,13 @@ import json
 from datetime import date
 
 from src.models.common import milliunits_to_dollars
-from src.server import _shared
+from src.server import _shared, icons
 from src.server.dashboard import DASHBOARD_URI  # also registers the dashboard ui:// resource
 
 MONEY_FLOW_EXCLUDE_GROUPS = {"Internal Master Category", "Credit Card Payments"}
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.ANALYTICS])
 @_shared.handle_errors
 async def get_money_flow(plan_id: str, month: str = "current") -> str:
     """Build Sankey chart data showing money flow from income sources to spending category groups.
@@ -60,7 +60,7 @@ async def get_money_flow(plan_id: str, month: str = "current") -> str:
     return json.dumps(result, indent=2)
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.ANALYTICS])
 @_shared.handle_errors
 async def get_spending_by_category(plan_id: str, month: str = "current") -> str:
     """Get per-category spending breakdown for a month, with budget vs actual comparison.
@@ -119,7 +119,10 @@ async def get_spending_by_category(plan_id: str, month: str = "current") -> str:
     return json.dumps(result, indent=2)
 
 
-@_shared.mcp.tool(meta={"ui": {"resourceUri": DASHBOARD_URI}, "ui/resourceUri": DASHBOARD_URI})
+@_shared.mcp.tool(
+    icons=[icons.ANALYTICS],
+    meta={"ui": {"resourceUri": DASHBOARD_URI}, "ui/resourceUri": DASHBOARD_URI},
+)
 @_shared.handle_errors
 async def get_monthly_report(
     plan_id: str, month: str = "current", trend_months: int = 6, top_n: int = 8

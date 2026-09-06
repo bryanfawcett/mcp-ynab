@@ -9,6 +9,7 @@ from mcp.server.mcpserver import MCPServer
 from src.cache.service import CacheService
 from src.config import Settings
 from src.db.engine import current_db_path, init_db, reset_db_path, use_db_path
+from src.server import icons
 from src.models.account import ACCOUNT_DEFAULT_EXCLUDE, Account
 from src.models.category import (
     CATEGORY_DEFAULT_EXCLUDE,
@@ -56,7 +57,7 @@ if not settings.multi_tenant and not settings.ynab_api_key:
     )
     sys.exit(1)
 
-mcp = MCPServer("ynab")
+mcp = MCPServer("ynab", title="YNAB", icons=[icons.SERVER])
 
 # In multi-tenant mode (src/server/http.py), every tool call is made on behalf
 # of whichever caller's YNAB token the current request is scoped to, not one

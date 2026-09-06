@@ -31,6 +31,7 @@ from src.server.scheduled import (
     delete_scheduled_transaction,
 )
 from src.server.analytics import get_money_flow, get_spending_by_category, get_monthly_report
+from src.server.reconcile import export_transactions_csv, reconcile_account
 
 __all__ = [
     "get_user",
@@ -53,6 +54,7 @@ __all__ = [
     "create_scheduled_transaction", "update_scheduled_transaction",
     "delete_scheduled_transaction",
     "get_money_flow", "get_spending_by_category", "get_monthly_report",
+    "export_transactions_csv", "reconcile_account",
     "main",
 ]
 

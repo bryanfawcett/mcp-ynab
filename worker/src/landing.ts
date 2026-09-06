@@ -120,7 +120,7 @@ export const LANDING_PAGE_HTML = `<!doctype html>
   <h2>What it does</h2>
   <div class="card">
     <ul class="features">
-      <li><b>30+ tools</b> — budgets, accounts, transactions, categories, payees, months, scheduled transactions, and analytics</li>
+      <li><b>50+ tools</b> — budgets, accounts, transactions, categories, payees, months, scheduled transactions, analytics, and reconciliation</li>
       <li><b>Delta sync</b> — only fetches what changed since the last call, using YNAB's server knowledge</li>
       <li><b>4-tier caching</b> — TTL cache, delta sync, retry with backoff, persistent storage</li>
       <li><b>Search &amp; analytics</b> — text search across transactions, per-category spending breakdowns, money-flow data</li>
@@ -145,6 +145,7 @@ export const LANDING_PAGE_HTML = `<!doctype html>
         <tr><th>Transactions</th><td><code>list_transactions</code>, <code>get_transaction</code>, <code>get_transactions_by_account</code>, <code>get_transactions_by_category</code>, <code>get_transactions_by_month</code>, <code>get_transactions_by_payee</code>, <code>search_transactions</code>, <code>create_transaction</code>, <code>create_transactions</code>, <code>update_transaction</code>, <code>update_transactions</code>, <code>delete_transaction</code>, <code>import_transactions</code></td></tr>
         <tr><th>Scheduled</th><td><code>list_scheduled_transactions</code>, <code>get_scheduled_transaction</code>, <code>create_scheduled_transaction</code>, <code>update_scheduled_transaction</code>, <code>delete_scheduled_transaction</code></td></tr>
         <tr><th>Analytics</th><td><code>get_money_flow</code>, <code>get_spending_by_category</code>, <code>get_monthly_report</code></td></tr>
+        <tr><th>Reconciliation</th><td><code>export_transactions_csv</code>, <code>reconcile_account</code></td></tr>
       </tbody>
     </table>
   </div>

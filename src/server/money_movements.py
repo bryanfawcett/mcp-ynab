@@ -1,8 +1,8 @@
-from src.server import _shared
+from src.server import _shared, icons
 from src.server._shared import serialize_list
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.MONEY_MOVEMENT])
 @_shared.handle_errors
 async def list_money_movements(
     plan_id: str, exclude_fields: list[str] | None = None
@@ -19,7 +19,7 @@ async def list_money_movements(
     return serialize_list(movements, exclude_fields=exclude_fields)
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.MONEY_MOVEMENT])
 @_shared.handle_errors
 async def get_money_movements_for_month(
     month: str, plan_id: str, exclude_fields: list[str] | None = None
@@ -37,7 +37,7 @@ async def get_money_movements_for_month(
     return serialize_list(movements, exclude_fields=exclude_fields)
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.MONEY_MOVEMENT])
 @_shared.handle_errors
 async def list_money_movement_groups(
     plan_id: str, exclude_fields: list[str] | None = None
@@ -54,7 +54,7 @@ async def list_money_movement_groups(
     return serialize_list(groups, exclude_fields=exclude_fields)
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.MONEY_MOVEMENT])
 @_shared.handle_errors
 async def get_money_movement_groups_for_month(
     month: str, plan_id: str, exclude_fields: list[str] | None = None

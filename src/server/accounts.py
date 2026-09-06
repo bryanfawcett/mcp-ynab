@@ -1,8 +1,8 @@
-from src.server import _shared
+from src.server import _shared, icons
 from src.server._shared import dollars_to_milliunits, serialize, serialize_list
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.ACCOUNT])
 @_shared.handle_errors
 async def list_accounts(
     plan_id: str, exclude_fields: list[str] | None = None
@@ -19,7 +19,7 @@ async def list_accounts(
     return serialize_list(accounts, exclude_fields=exclude_fields)
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.ACCOUNT])
 @_shared.handle_errors
 async def create_account(
     plan_id: str,
@@ -48,7 +48,7 @@ async def create_account(
     return serialize(acct, exclude_fields=exclude_fields)
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.ACCOUNT])
 @_shared.handle_errors
 async def get_account(
     account_id: str, plan_id: str, exclude_fields: list[str] | None = None

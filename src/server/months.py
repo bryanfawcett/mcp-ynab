@@ -1,8 +1,8 @@
-from src.server import _shared
+from src.server import _shared, icons
 from src.server._shared import serialize, serialize_list
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.MONTH])
 @_shared.handle_errors
 async def list_months(
     plan_id: str, exclude_fields: list[str] | None = None
@@ -19,7 +19,7 @@ async def list_months(
     return serialize_list(months, exclude_fields=exclude_fields)
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.MONTH])
 @_shared.handle_errors
 async def get_month(
     month: str, plan_id: str, exclude_fields: list[str] | None = None

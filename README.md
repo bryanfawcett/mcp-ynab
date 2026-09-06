@@ -6,13 +6,15 @@ An MCP server that connects AI assistants to your [YNAB](https://www.ynab.com/) 
 
 ## Features
 
-- **30+ tools** — budgets, accounts, transactions, categories, payees, months, scheduled transactions, and analytics
+- **50+ tools** — budgets, accounts, transactions, categories, payees, months, scheduled transactions, analytics, and reconciliation
 - **Delta sync** — only fetches what changed since the last call (uses YNAB's server knowledge)
 - **4-tier caching** — TTL cache, delta sync, retry with backoff, SQLite persistence
 - **Search & analytics** — text search across transactions, per-category spending breakdowns, Sankey flow data
 - **Monthly reports with a live dashboard** — `get_monthly_report` returns income/spending summary, category and payee breakdowns, overspent categories, and a multi-month trend in one call. On hosts that support [MCP Apps](https://github.com/modelcontextprotocol/ext-apps) (Claude, ChatGPT), it renders as an interactive dashboard (KPI tiles, charts, tables) automatically — no separate artifact step needed. On other hosts, the same data comes back as plain JSON.
+- **Reconciliation** — `reconcile_account` compares an account's cleared transactions against a real-world statement balance, previews the adjustment and which transactions would be marked reconciled, and (once confirmed) applies it — the same workflow as YNAB's own "Reconcile" button. `export_transactions_csv` exports a register (any account, date range, cleared status) as CSV for reviewing against a statement.
 - **Bulk operations** — create or update multiple transactions in a single call
 - **Dollar amounts** — accepts dollars in parameters, converts to YNAB milliunits internally
+- **Icons** — the server and every tool carry an on-brand icon (SEP for `icons`) for clients that render them
 
 ## Quick Start
 
@@ -65,6 +67,7 @@ See [mcp-ynab.com](https://mcp-ynab.com) for config file locations and troublesh
 | **Transactions** | `list_transactions`, `get_transaction`, `get_transactions_by_account`, `get_transactions_by_category`, `get_transactions_by_month`, `get_transactions_by_payee`, `search_transactions`, `create_transaction`, `create_transactions`, `update_transaction`, `update_transactions`, `delete_transaction`, `import_transactions` |
 | **Scheduled** | `list_scheduled_transactions`, `get_scheduled_transaction`, `create_scheduled_transaction`, `update_scheduled_transaction`, `delete_scheduled_transaction` |
 | **Analytics** | `get_money_flow`, `get_spending_by_category`, `get_monthly_report` |
+| **Reconciliation** | `export_transactions_csv`, `reconcile_account` |
 
 ### Field selection
 

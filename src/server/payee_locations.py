@@ -1,8 +1,8 @@
-from src.server import _shared
+from src.server import _shared, icons
 from src.server._shared import serialize, serialize_list
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.PAYEE_LOCATION])
 @_shared.handle_errors
 async def list_payee_locations(
     plan_id: str, exclude_fields: list[str] | None = None
@@ -19,7 +19,7 @@ async def list_payee_locations(
     return serialize_list(locations, exclude_fields=exclude_fields)
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.PAYEE_LOCATION])
 @_shared.handle_errors
 async def get_payee_location(
     payee_location_id: str,
@@ -39,7 +39,7 @@ async def get_payee_location(
     return serialize(location, exclude_fields=exclude_fields)
 
 
-@_shared.mcp.tool()
+@_shared.mcp.tool(icons=[icons.PAYEE_LOCATION])
 @_shared.handle_errors
 async def get_payee_locations_by_payee(
     payee_id: str, plan_id: str, exclude_fields: list[str] | None = None
