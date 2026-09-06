@@ -10,7 +10,7 @@ An MCP server that connects AI assistants to your [YNAB](https://www.ynab.com/) 
 - **Delta sync** — only fetches what changed since the last call (uses YNAB's server knowledge)
 - **4-tier caching** — TTL cache, delta sync, retry with backoff, SQLite persistence
 - **Search & analytics** — text search across transactions, per-category spending breakdowns, Sankey flow data
-- **Monthly reports with a live dashboard** — `get_monthly_report` returns income/spending summary, category and payee breakdowns, overspent categories, and a multi-month trend in one call. On hosts that support [MCP Apps](https://github.com/modelcontextprotocol/ext-apps) (Claude web/Desktop), it renders as an interactive dashboard (KPI tiles, charts, tables) automatically — no separate artifact step needed. On other hosts, the same data comes back as plain JSON.
+- **Monthly reports with a live dashboard** — `get_monthly_report` returns income/spending summary, category and payee breakdowns, overspent categories, and a multi-month trend in one call. On hosts that support [MCP Apps](https://github.com/modelcontextprotocol/ext-apps) (Claude, ChatGPT), it renders as an interactive dashboard (KPI tiles, charts, tables) automatically — no separate artifact step needed. On other hosts, the same data comes back as plain JSON.
 - **Bulk operations** — create or update multiple transactions in a single call
 - **Dollar amounts** — accepts dollars in parameters, converts to YNAB milliunits internally
 

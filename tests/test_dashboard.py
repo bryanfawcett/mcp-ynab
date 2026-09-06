@@ -18,6 +18,8 @@ async def test_dashboard_resource_is_registered():
     assert dashboard.meta["ui"]["csp"]["resourceDomains"] == [
         "https://esm.sh",
         "https://cdn.jsdelivr.net",
+        "https://fonts.googleapis.com",
+        "https://fonts.gstatic.com",
     ]
 
 
@@ -29,6 +31,7 @@ async def test_dashboard_resource_content():
     assert "@modelcontextprotocol/ext-apps" in content
     assert "chart.js" in content
     assert "ontoolresult" in content
+    assert "--color-accent: #FF8A65" in content  # Bundu copper mineral (dark)
 
 
 @pytest.mark.asyncio

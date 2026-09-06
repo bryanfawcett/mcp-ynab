@@ -2,16 +2,21 @@
 
 Implements the MCP Apps extension (SEP-1865, https://github.com/modelcontextprotocol/ext-apps):
 a `ui://` resource containing an HTML app, linked to a tool via that tool's
-`meta={"ui": {"resourceUri": ...}}`. Hosts that support MCP Apps (Claude web/Desktop,
-as of early 2026) render the resource in a sandboxed iframe after the linked tool
-is called, and the app reads the tool's result via the `@modelcontextprotocol/ext-apps`
-JS library's `ontoolresult` handler.
+`meta={"ui": {"resourceUri": ...}}`. Hosts that support MCP Apps (Claude and
+ChatGPT, as of early 2026) render the resource in a sandboxed iframe after the
+linked tool is called, and the app reads the tool's result via the
+`@modelcontextprotocol/ext-apps` JS library's `ontoolresult` handler.
 
 This app reads `result.content[0].text` (the same JSON string every tool in this
 server already returns) rather than `result.structuredContent`, so get_monthly_report
 needed no changes: giving it a Pydantic/TypedDict return type instead of `str` to get
 SDK-native structuredContent would break handle_errors, whose error branches return a
 plain JSON string incompatible with a structured-output schema.
+
+Styling follows the Bundu brand system (Mzizi design tokens: colors, typography,
+radii — see mzizi_get_tokens). Bundu's own ecosystem mineral is copper (#BF5A36
+light / #FF8A65 dark), used here as the accent; chart series use the "experimental"
+7-hue set the tokens document as built for categorical/data-viz use.
 """
 
 from src.server import _shared
@@ -33,33 +38,71 @@ DASHBOARD_HTML = """<!doctype html>
   }
 }
 </script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Noto+Sans:wght@400;500;600;700&family=Noto+Serif:wght@600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
-    --color-bg: #0a0a0a;
-    --color-card: #141414;
-    --color-border: rgba(255,255,255,.08);
-    --color-text-primary: #e5e5e5;
-    --color-text-secondary: #9ca3af;
-    --color-accent: #22d3ee;
-    --color-negative: #f87171;
-    --color-positive: #4ade80;
+    /* Bundu brand tokens (dark by default; light overrides below) */
+    --font-serif: "Noto Serif", Georgia, serif;
+    --font-sans: "Noto Sans", system-ui, -apple-system, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+    --color-accent: #FF8A65;   /* Bundu ecosystem mineral: copper (dark) */
+    --color-bg: #0E0D0C;
+    --color-card: #131211;
+    --color-border: #2A2927;  /* warm stone, not cool gray */
+    --color-text-primary: #F3F3F1;
+    --color-text-secondary: #A09C93; /* semantic "neutral" token */
+    --color-negative: #F2B8B5; /* semantic "error" token */
+    --color-positive: #64FFDA; /* semantic "success" token */
+
+    /* "experimental" 7-hue chart palette, ui-optimized dark variants */
+    --chart-1: #BB562D; /* ember */
+    --chart-2: #768420; /* acacia */
+    --chart-3: #228D22; /* fern */
+    --chart-4: #218A7A; /* lagoon */
+    --chart-5: #426CD1; /* storm */
+    --chart-6: #9749D3; /* dusk */
+    --chart-7: #CA3188; /* protea */
+
+    --radius-lg: 14px; /* card radius per componentSpecs */
   }
   @media (prefers-color-scheme: light) {
     :root:not([data-theme]) {
-      --color-bg: #ffffff;
-      --color-card: #f7f7f8;
-      --color-border: rgba(0,0,0,.08);
-      --color-text-primary: #18181b;
-      --color-text-secondary: #52525b;
+      --color-accent: #BF5A36;
+      --color-bg: #F3F3F1;
+      --color-card: #EEEEEC;
+      --color-border: #E7E5E0;
+      --color-text-primary: #1A1918;
+      --color-text-secondary: #55514B;
+      --color-negative: #B3261E;
+      --color-positive: #004D40;
+      --chart-1: #CD5F33;
+      --chart-2: #7E8C22;
+      --chart-3: #259725;
+      --chart-4: #249383;
+      --chart-5: #577BD6;
+      --chart-6: #A35DD8;
+      --chart-7: #D34998;
     }
   }
   [data-theme="light"] {
-    --color-bg: #ffffff;
-    --color-card: #f7f7f8;
-    --color-border: rgba(0,0,0,.08);
-    --color-text-primary: #18181b;
-    --color-text-secondary: #52525b;
+    --color-accent: #BF5A36;
+    --color-bg: #F3F3F1;
+    --color-card: #EEEEEC;
+    --color-border: #E7E5E0;
+    --color-text-primary: #1A1918;
+    --color-text-secondary: #55514B;
+    --color-negative: #B3261E;
+    --color-positive: #004D40;
+    --chart-1: #CD5F33;
+    --chart-2: #7E8C22;
+    --chart-3: #259725;
+    --chart-4: #249383;
+    --chart-5: #577BD6;
+    --chart-6: #A35DD8;
+    --chart-7: #D34998;
   }
   * { box-sizing: border-box; }
   body {
@@ -69,7 +112,7 @@ DASHBOARD_HTML = """<!doctype html>
     color: var(--color-text-primary);
     padding: 16px;
   }
-  h1 { font-size: 1.15rem; margin: 0 0 2px; }
+  h1 { font-family: var(--font-serif); font-weight: 700; font-size: 1.25rem; margin: 0 0 2px; }
   .subtitle { color: var(--color-text-secondary); font-size: .85rem; margin: 0 0 16px; }
   .kpi-row {
     display: grid;
@@ -80,7 +123,7 @@ DASHBOARD_HTML = """<!doctype html>
   .card {
     background: var(--color-card);
     border: 1px solid var(--color-border);
-    border-radius: 10px;
+    border-radius: var(--radius-lg);
     padding: 12px 14px;
   }
   .kpi-label { font-size: .72rem; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: .03em; }
@@ -97,13 +140,13 @@ DASHBOARD_HTML = """<!doctype html>
     .chart-row { grid-template-columns: 1fr; }
   }
   .chart-card { height: 240px; }
-  .chart-card h2, .table-card h2 { font-size: .85rem; margin: 0 0 8px; color: var(--color-text-secondary); font-weight: 600; }
+  .chart-card h2, .table-card h2 { font-family: var(--font-sans); font-size: .85rem; margin: 0 0 8px; color: var(--color-text-secondary); font-weight: 600; }
   .chart-card .chart-wrap { position: relative; height: 190px; }
   .table-card { margin-bottom: 12px; }
   table { width: 100%; border-collapse: collapse; font-size: .82rem; }
   th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--color-border); }
   th { color: var(--color-text-secondary); font-weight: 500; }
-  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
   .table-row-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   @media (max-width: 640px) {
     .table-row-pair { grid-template-columns: 1fr; }
@@ -125,12 +168,16 @@ const appEl = document.getElementById("app");
 const fmtUSD = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 const fmtMonth = (iso) => new Date(iso + "T00:00:00").toLocaleDateString("en-US", { month: "short", year: "2-digit" });
 
-const PALETTE = ["#22d3ee", "#a78bfa", "#f472b6", "#4ade80", "#fbbf24", "#60a5fa", "#f87171", "#34d399"];
 let charts = [];
 
 function destroyCharts() {
   for (const c of charts) c.destroy();
   charts = [];
+}
+
+function chartPalette() {
+  const style = getComputedStyle(document.body);
+  return [1, 2, 3, 4, 5, 6, 7].map((n) => style.getPropertyValue(`--chart-${n}`).trim());
 }
 
 function handleHostContextChanged(ctx) {
@@ -198,18 +245,21 @@ function render(data) {
     </div>
   `;
 
-  const textColor = getComputedStyle(document.body).getPropertyValue("--color-text-secondary").trim() || "#9ca3af";
-  const gridColor = getComputedStyle(document.body).getPropertyValue("--color-border").trim() || "rgba(255,255,255,.08)";
+  const bodyStyle = getComputedStyle(document.body);
+  const textColor = bodyStyle.getPropertyValue("--color-text-secondary").trim() || "#A09C93";
+  const gridColor = bodyStyle.getPropertyValue("--color-border").trim() || "#2A2927";
+  const accentColor = bodyStyle.getPropertyValue("--color-accent").trim() || "#FF8A65";
+  const palette = chartPalette();
   Chart.defaults.color = textColor;
   Chart.defaults.borderColor = gridColor;
-  Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+  Chart.defaults.font.family = bodyStyle.getPropertyValue("--font-sans").trim() || bodyStyle.fontFamily;
 
   const groups = data.category_groups || [];
   charts.push(new Chart(document.getElementById("groupsChart"), {
     type: "doughnut",
     data: {
       labels: groups.map((g) => g.name),
-      datasets: [{ data: groups.map((g) => g.spent), backgroundColor: PALETTE, borderWidth: 0 }],
+      datasets: [{ data: groups.map((g) => g.spent), backgroundColor: palette, borderWidth: 0 }],
     },
     options: {
       responsive: true, maintainAspectRatio: false,
@@ -223,8 +273,8 @@ function render(data) {
     data: {
       labels: cats.map((c) => c.name),
       datasets: [
-        { label: "Budgeted", data: cats.map((c) => c.budgeted), backgroundColor: "#60a5fa88" },
-        { label: "Spent", data: cats.map((c) => c.spent), backgroundColor: PALETTE[0] },
+        { label: "Budgeted", data: cats.map((c) => c.budgeted), backgroundColor: gridColor },
+        { label: "Spent", data: cats.map((c) => c.spent), backgroundColor: accentColor },
       ],
     },
     options: {
@@ -240,9 +290,9 @@ function render(data) {
     data: {
       labels: trend.map((t) => fmtMonth(t.month)),
       datasets: [
-        { label: "Income", data: trend.map((t) => t.income), borderColor: PALETTE[3], backgroundColor: "transparent", tension: .3 },
-        { label: "Spent", data: trend.map((t) => t.spent), borderColor: PALETTE[6], backgroundColor: "transparent", tension: .3 },
-        { label: "Net", data: trend.map((t) => t.net), borderColor: PALETTE[0], backgroundColor: "transparent", tension: .3, borderDash: [4, 3] },
+        { label: "Income", data: trend.map((t) => t.income), borderColor: palette[3], backgroundColor: "transparent", tension: .3 },
+        { label: "Spent", data: trend.map((t) => t.spent), borderColor: palette[0], backgroundColor: "transparent", tension: .3 },
+        { label: "Net", data: trend.map((t) => t.net), borderColor: accentColor, backgroundColor: "transparent", tension: .3, borderDash: [4, 3] },
       ],
     },
     options: {
@@ -312,7 +362,18 @@ app.connect().then(() => {
 @_shared.mcp.resource(
     DASHBOARD_URI,
     mime_type="text/html;profile=mcp-app",
-    meta={"ui": {"csp": {"resourceDomains": ["https://esm.sh", "https://cdn.jsdelivr.net"]}}},
+    meta={
+        "ui": {
+            "csp": {
+                "resourceDomains": [
+                    "https://esm.sh",
+                    "https://cdn.jsdelivr.net",
+                    "https://fonts.googleapis.com",
+                    "https://fonts.gstatic.com",
+                ]
+            }
+        }
+    },
 )
 def dashboard_view() -> str:
     """Budget dashboard UI resource, rendered from get_monthly_report's output."""

@@ -127,7 +127,7 @@ async def get_monthly_report(
     """Build a full monthly budget report: income/spending summary, category-group and
     top-category breakdowns, overspent categories, top payees, and a multi-month trend.
 
-    On hosts that support MCP Apps (e.g. Claude web/Desktop), this renders as an
+    On hosts that support MCP Apps (e.g. Claude, ChatGPT), this renders as an
     interactive dashboard (KPI tiles, charts, tables) automatically — no separate
     artifact needed. On hosts that don't, the same data comes back as JSON. Ask for
     this instead of combining get_spending_by_category and get_money_flow separately.
