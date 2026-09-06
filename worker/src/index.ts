@@ -50,7 +50,6 @@ const TRUTHY = new Set(["true", "1", "yes", "on", "y", "t"]);
 function isMultiTenant(env: Env): boolean {
   return TRUTHY.has((env.MCP_MULTI_TENANT ?? "").trim().toLowerCase());
 }
-
 // A stable, non-reversible id for whichever container instance should serve
 // this caller — never the raw token itself, so it doesn't sit around as a
 // Durable Object name. Two requests with the same token always hash to the
