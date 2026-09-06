@@ -15,7 +15,15 @@
       "class_name": "YnabMcpContainer",
       "image": "./Dockerfile",
       "image_build_context": "..",
-      "max_instances": 1
+      // 1 is correct for single-tenant mode (one account, one container). In
+      // multi-tenant mode, src/index.ts routes each caller to their own
+      // container instance (keyed by their YNAB token) so tenants don't share
+      // CPU/memory/cache and each sleeps independently — that needs room for
+      // more than one to run at once. 10 is a starting cap on concurrently
+      // *active* instances (idle ones still sleep per `sleepAfter` below,
+      // and Cloudflare's active-CPU pricing only bills used CPU) — raise it
+      // if usage grows past that many people using this at the same time.
+      "max_instances": 10
     }
   ],
   "durable_objects": {
