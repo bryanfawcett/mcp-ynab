@@ -1,42 +1,63 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import Hero from "@bundu/ui/Hero.astro";
 ---
 <Layout
   title="Nyuchi MCP for YNAB"
   description="A Model Context Protocol server connecting AI assistants to a YNAB budget, built by Nyuchi."
 >
-  <div class="badge"><span class="dot"></span> Running on Cloudflare — always on, no local install</div>
-  <h1>Talk to your budget<br><span>in plain English.</span></h1>
-  <p class="lede">
-    A remote deployment of <a href="https://github.com/bryanfawcett/mcp-ynab" target="_blank" rel="noopener">mcp-ynab</a>,
-    an open-source <a href="https://modelcontextprotocol.io" target="_blank" rel="noopener">Model Context Protocol</a>
-    server that connects an AI assistant directly to a <a href="https://www.ynab.com/" target="_blank" rel="noopener">YNAB</a>
-    budget, built and hosted by <a href="https://nyuchi.com" target="_blank" rel="noopener">Nyuchi</a>. Any MCP client
-    that speaks remote connectors — Claude and ChatGPT included — can reach it without installing anything first.
-  </p>
+  <!-- Hero's props map cleanly onto title/subtitle/description/CTAs; the
+       "Running on Cloudflare" badge pill doesn't have an equivalent slot,
+       so it becomes the subtitle (Hero renders it as the eyebrow line
+       above the headline) rather than a separate hand-rolled pill. -->
+  <Hero
+    title="Talk to your budget in plain English."
+    subtitle="Running on Cloudflare — always on, no local install"
+    description="A remote deployment of mcp-ynab, an open-source Model Context Protocol server that connects an AI assistant directly to a YNAB budget, built and hosted by Nyuchi. Any MCP client that speaks remote connectors — Claude and ChatGPT included — can reach it without installing anything first."
+    primaryCTA={{ text: "Connect your budget", href: "#connecting" }}
+    secondaryCTA={{ text: "View on GitHub", href: "https://github.com/bryanfawcett/mcp-ynab", external: true }}
+  />
 
-  <div class="endpoint">
-    <span class="mono" style="color:var(--text-secondary)">MCP endpoint —</span>
-    <code>https://ynab.nyuchi.com/mcp</code>
+  <!-- The raw MCP endpoint doesn't map onto Hero's props either — kept as
+       its own small component directly below the Hero. -->
+  <div class="card flex flex-wrap items-center gap-3 p-5">
+    <span class="font-mono text-sm text-muted-foreground">MCP endpoint —</span>
+    <code class="font-mono text-sm text-primary">https://ynab.nyuchi.com/mcp</code>
   </div>
 
-  <h2>What it does</h2>
-  <div class="card">
-    <ul class="features">
-      <li><b>50+ tools</b> — budgets, accounts, transactions, categories, payees, months, scheduled transactions, analytics, and reconciliation</li>
-      <li><b>Delta sync</b> — only fetches what changed since the last call, using YNAB's server knowledge</li>
-      <li><b>4-tier caching</b> — TTL cache, delta sync, retry with backoff, persistent storage</li>
-      <li><b>Search &amp; analytics</b> — text search across transactions, per-category spending breakdowns, money-flow data</li>
-      <li><b>Monthly reports with a live dashboard</b> — income/spending summary, category and payee breakdowns, overspent categories, and a multi-month trend, rendered as an interactive dashboard on MCP Apps-capable hosts (Claude, ChatGPT)</li>
-      <li><b>Reconciliation</b> — compare an account's cleared transactions against a real-world statement balance, the same workflow as YNAB's own "Reconcile" button</li>
-      <li><b>Bulk operations</b> — create or update multiple transactions in a single call</li>
-      <li><b>Dollar amounts</b> — accepts plain dollars, converts to YNAB's internal format automatically</li>
+  <h2 class="mt-12 mb-4 font-serif text-h2 text-foreground">What it does</h2>
+  <div class="card p-6">
+    <ul class="grid gap-3.5">
+      <li class="relative pl-6 before:absolute before:left-0 before:content-['→'] before:text-primary">
+        <b class="text-foreground">50+ tools</b> — budgets, accounts, transactions, categories, payees, months, scheduled transactions, analytics, and reconciliation
+      </li>
+      <li class="relative pl-6 before:absolute before:left-0 before:content-['→'] before:text-primary">
+        <b class="text-foreground">Delta sync</b> — only fetches what changed since the last call, using YNAB's server knowledge
+      </li>
+      <li class="relative pl-6 before:absolute before:left-0 before:content-['→'] before:text-primary">
+        <b class="text-foreground">4-tier caching</b> — TTL cache, delta sync, retry with backoff, persistent storage
+      </li>
+      <li class="relative pl-6 before:absolute before:left-0 before:content-['→'] before:text-primary">
+        <b class="text-foreground">Search &amp; analytics</b> — text search across transactions, per-category spending breakdowns, money-flow data
+      </li>
+      <li class="relative pl-6 before:absolute before:left-0 before:content-['→'] before:text-primary">
+        <b class="text-foreground">Monthly reports with a live dashboard</b> — income/spending summary, category and payee breakdowns, overspent categories, and a multi-month trend, rendered as an interactive dashboard on MCP Apps-capable hosts (Claude, ChatGPT)
+      </li>
+      <li class="relative pl-6 before:absolute before:left-0 before:content-['→'] before:text-primary">
+        <b class="text-foreground">Reconciliation</b> — compare an account's cleared transactions against a real-world statement balance, the same workflow as YNAB's own "Reconcile" button
+      </li>
+      <li class="relative pl-6 before:absolute before:left-0 before:content-['→'] before:text-primary">
+        <b class="text-foreground">Bulk operations</b> — create or update multiple transactions in a single call
+      </li>
+      <li class="relative pl-6 before:absolute before:left-0 before:content-['→'] before:text-primary">
+        <b class="text-foreground">Dollar amounts</b> — accepts plain dollars, converts to YNAB's internal format automatically
+      </li>
     </ul>
   </div>
 
-  <h2>Available tools</h2>
-  <div class="card">
-    <table>
+  <h2 class="mt-12 mb-4 font-serif text-h2 text-foreground">Available tools</h2>
+  <div class="card overflow-x-auto p-6">
+    <table class="tools-table w-full border-collapse text-[0.88rem]">
       <tbody>
         <tr><th>User</th><td><code>get_user</code></td></tr>
         <tr><th>Plans</th><td><code>list_plans</code>, <code>get_plan</code>, <code>get_plan_settings</code></td></tr>
@@ -54,29 +75,35 @@ import Layout from "../layouts/Layout.astro";
     </table>
   </div>
 
-  <h2>Connecting</h2>
-  <div class="card">
-    <p style="margin:0 0 1rem;">
+  <h2 id="connecting" class="mt-12 mb-4 scroll-mt-6 font-serif text-h2 text-foreground">Connecting</h2>
+  <div class="card p-6">
+    <p class="mb-4">
       Every request runs as you — nobody else's budget is visible to you, and yours isn't
       visible to them. Two ways to prove that: sign in with YNAB directly (no token to copy),
       or paste your own YNAB personal access token.
     </p>
 
-    <h3 style="font-family:var(--font-serif); font-weight:600; font-size:1.05rem; margin:0 0 .6rem;">Option A — Sign in with YNAB (recommended)</h3>
-    <p style="margin:0 0 .6rem;">In Claude web: <b>Settings → Connectors → Add custom connector</b>.</p>
-    <ol style="margin:0 0 1.25rem; padding-left:1.4rem; color:var(--text-secondary);">
-      <li style="margin-bottom:.4rem;">Paste the MCP endpoint above (no <code>?token=</code>) as the server URL.</li>
-      <li style="margin-bottom:.4rem;">Under <b>Authentication</b>, leave <b>Always required</b> selected.</li>
-      <li style="margin-bottom:.4rem;">Under <b>OAuth client</b>, pick <b>No client ID — register one automatically</b>.
+    <h3 class="mb-2.5 font-serif text-[1.05rem] font-semibold text-foreground">Option A — Sign in with YNAB (recommended)</h3>
+    <p class="mb-2.5">In Claude web: <b>Settings → Connectors → Add custom connector</b>.</p>
+    <!-- role="list" restores the accessible list semantics `list-none`
+         strips in Safari/VoiceOver (a documented WebKit quirk: removing
+         list-style-type drops the element's list role entirely there,
+         unlike other browsers) -- axe-core doesn't reproduce this, so it
+         won't show up in check:a11y, but VoiceOver users would otherwise
+         hear four bare items instead of "list, 4 items". -->
+    <ol role="list" class="mb-5 list-none space-y-1.5 pl-0 text-muted-foreground">
+      <li>1. Paste the MCP endpoint above (no <code>?token=</code>) as the server URL.</li>
+      <li>2. Under <b class="text-foreground">Authentication</b>, leave <b class="text-foreground">Always required</b> selected.</li>
+      <li>3. Under <b class="text-foreground">OAuth client</b>, pick <b class="text-foreground">No client ID — register one automatically</b>.
         This server supports Dynamic Client Registration, not Anthropic's hosted client
         metadata option above it — picking that one instead is what produces
         "Couldn't determine the server settings".</li>
-      <li>Click <b>Add</b>, then <b>Connect</b> — you'll land on YNAB's own sign-in page to
+      <li>4. Click <b class="text-foreground">Add</b>, then <b class="text-foreground">Connect</b> — you'll land on YNAB's own sign-in page to
         authorize access, then bounce back connected. No token ever touches this site.</li>
     </ol>
 
-    <h3 style="font-family:var(--font-serif); font-weight:600; font-size:1.05rem; margin:0 0 .6rem;">Option B — Your own token</h3>
-    <p style="margin:0 0 1rem;">
+    <h3 class="mb-2.5 font-serif text-[1.05rem] font-semibold text-foreground">Option B — Your own token</h3>
+    <p class="mb-4">
       For clients without a full OAuth UI (or if you'd rather not use it), get a
       <a href="https://app.ynab.com/settings/developer" target="_blank" rel="noopener">YNAB personal access token</a>
       and use the MCP endpoint above with <code>?token=&lt;your-YNAB-token&gt;</code> appended;
@@ -85,7 +112,7 @@ import Layout from "../layouts/Layout.astro";
       YNAB API calls on your behalf, per request — never stored.
     </p>
 
-    <p style="margin:0 0 1rem;">
+    <p class="mb-4">
       Running the open-source server yourself instead — for just you, or for others under
       your own domain? See
       <a href="https://github.com/bryanfawcett/mcp-ynab" target="_blank" rel="noopener">this fork</a>'s
@@ -94,14 +121,37 @@ import Layout from "../layouts/Layout.astro";
       stdio setup (Claude Desktop, Claude Code, ChatGPT).
     </p>
 
-    <p style="margin:0; color:var(--text-secondary);">
+    <p class="text-muted-foreground">
       Stuck, or something not working? Use the chat bubble in the corner, or email
       <a href="mailto:support@nyuchi.com">support@nyuchi.com</a>.
     </p>
   </div>
 
-  <p class="mono" style="color:var(--text-secondary); font-size:.82rem; margin-top:3rem;">
+  <p class="mt-12 font-mono text-[0.82rem] text-muted-foreground">
     Runs the open-source <a href="https://github.com/bryanfawcett/mcp-ynab" target="_blank" rel="noopener">mcp-ynab</a>
     server on a Cloudflare Container. AGPL-3.0 licensed.
   </p>
+
+  <style>
+    /* Table layout (column width, row dividers) is specific to this one
+       table's content shape, so it stays a small scoped stylesheet rather
+       than a pile of one-off utility classes — colors reference the
+       library's own semantic tokens directly (--border, --muted-foreground)
+       since this is new markup, not a page kept as-is for scope reasons. */
+    .tools-table th,
+    .tools-table td {
+      text-align: left;
+      padding: .6rem .75rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    .tools-table th {
+      color: var(--muted-foreground);
+      font-weight: 500;
+      width: 9rem;
+    }
+    .tools-table td code {
+      color: var(--primary);
+    }
+  </style>
 </Layout>

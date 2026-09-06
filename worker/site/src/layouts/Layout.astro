@@ -1,19 +1,23 @@
 ---
-// Shared head + brand tokens for every page. Colors/radii are Nyuchi's own
-// Mzizi tokens (mzizi_get_tokens family=ecosystem/minerals) — gold
-// (#FFD740 dark / #5D4037 light), not Bundu's copper: this is specifically
-// a Nyuchi product (the "infrastructure & enterprise" pillar), not a
-// generic cross-ecosystem one. Typography is Mzizi's own type system
-// (mzizi_get_tokens family=typography): Noto Serif for display/headings,
-// Noto Sans for body copy and UI labels, JetBrains Mono for code — chosen
-// there specifically for broad language/diacritic coverage (African
-// languages included), not just aesthetics.
+// Shared head + chrome for every page, now built on @bundu/ui — Nyuchi's
+// implementation of the Mzizi design system — instead of hand-rolled CSS
+// custom properties. Brand color (gold, Nyuchi's own ecosystem mineral —
+// not Bundu's copper) comes from the library's brand-nyuchi.css overlay;
+// typography (Noto Serif / Noto Sans / JetBrains Mono, per Mzizi's own
+// type tokens) is already what @bundu/ui's globals.css and tailwind-preset
+// specify, so the Google Fonts link below still supplies the exact faces
+// the library's `font-serif`/`font-sans`/`font-mono` utilities expect.
 //
-// This <style> block is `is:global`: Astro scopes a component's styles to
-// elements *that component itself* renders, and content passed through
-// `<slot />` from a page keeps that page's own scope, not this layout's —
-// so a plain (non-global) style here would silently never match anything
-// inside <main>, including every page's own headings, links, and cards.
+// This <style> block (only the bits Tailwind utilities don't cover) is
+// `is:global`: Astro scopes a component's styles to elements *that
+// component itself* renders, and content passed through `<slot />` from a
+// page keeps that page's own scope, not this layout's — so a plain
+// (non-global) style here would silently never match anything inside
+// <main>, including every page's own headings, links, and cards.
+import "../styles/global.css";
+import MineralStrip from "@bundu/ui/MineralStrip.astro";
+import SocialIcon from "@bundu/ui/SocialIcon.astro";
+
 interface Props {
   title: string;
   description: string;
@@ -25,6 +29,39 @@ const { title, description } = Astro.props;
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Sets the theme attribute the library's tokens.css keys off of
+     ([data-theme="dark"]) before first paint, so there's no flash of the
+     wrong theme. This app is dark-by-default with light only when the OS
+     explicitly prefers it — @bundu/ui's tokens.css is the opposite
+     polarity (bare :root = light, [data-theme="dark"] = dark), so this
+     script is what preserves this app's existing default using the
+     library's own supported toggle mechanism, rather than hand-copying
+     hex values between the two conventions (tokens.css explicitly says
+     not to hand-edit its values). Must run synchronously, before any
+     render-blocking content, which is why it's first in <head>.
+
+     Also listens for the preference changing while the tab stays open
+     (e.g. the OS switching themes at sunset) -- the previous CSS-only
+     `@media (prefers-color-scheme)` approach updated live for free;
+     matching that with an attribute-based toggle needs this explicit
+     listener, not just the one-time check above.
+
+     No-JS fallback: without JavaScript this attribute never gets set, so
+     visitors always get the library's light-mode default regardless of
+     OS preference, rather than this app's intended dark-by-default. A
+     `prefers-color-scheme` media query could restore that, but only by
+     hand-copying tokens.css's dark hex values into this file, which is
+     exactly what that file's own docstring says not to do. Accepted
+     tradeoff: a static informational site with negligible no-JS traffic
+     isn't worth reintroducing a second, driftable copy of the palette. -->
+<script is:inline>
+  const media = matchMedia("(prefers-color-scheme: light)");
+  const applyTheme = () => {
+    document.documentElement.dataset.theme = media.matches ? "light" : "dark";
+  };
+  applyTheme();
+  media.addEventListener("change", applyTheme);
+</script>
 <title>{title}</title>
 <meta name="description" content={description}>
 <!-- Nyuchi's actual bee mark (nyuchi.com/icon-dark.png) — "Nyuchi" is Shona
@@ -37,223 +74,54 @@ const { title, description } = Astro.props;
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@500;600;700&family=Noto+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style is:global>
-  :root {
-    --font-display: "Noto Serif", ui-serif, Georgia, serif;
-    --font-serif: "Noto Serif", ui-serif, Georgia, serif;
-    --font-sans: "Noto Sans", ui-sans-serif, system-ui, sans-serif;
-    --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  /* Comfortable width on laptop/desktop — 760px (a single-column article
+     measure) left this cramped on anything wider than a phone, with most
+     of the viewport sitting empty on either side. Kept as a raw value
+     here (rather than a Tailwind max-w-* utility) since it's this app's
+     own reading-width choice, not a design-system constant. */
+  .content-width { max-width: var(--content-width); }
 
-    /* Nyuchi's own ecosystem mineral (gold/honey) — not Bundu's copper. */
-    --color-accent: #FFD740;
-    --bg-base: #0E0D0C;
-    --bg-surface: #131211;
-    --bg-raised: #2E2C29;
-    --border: #2A2927;
-    --text-primary: #F3F3F1;
-    --text-secondary: #B8B3A8;
-
-    --radius-lg: 14px;
-    --radius-full: 9999px;
-
-    /* Comfortable width on laptop/desktop — 760px (a single-column article
-       measure) left this cramped on anything wider than a phone, with most
-       of the viewport sitting empty on either side. */
-    --content-width: 1040px;
-
-    /* Semantic status colors (project page) — separate from the
-       brand accent above, never used interchangeably with it. */
-    --status-done: #7CD992;
-    --status-done-bg: #17301F;
-    --status-action: #FFD740;
-    --status-action-bg: #35301A;
-    --status-blocked: #F2B8B5;
-    --status-blocked-bg: #3A211F;
-
-    /* Mzizi's mineral palette (mzizi_get_tokens family=minerals), dark-mode
-       values — used only by .mineral-strip below, a brand accent distinct
-       from --color-accent (which is gold alone). Matches the 5-of-7 subset
-       and left-to-right order Mzizi's own components use (login-01),
-       omitting sodalite/copper. */
-    --mineral-cobalt: #00B0FF;
-    --mineral-tanzanite: #B388FF;
-    --mineral-malachite: #64FFDA;
-    --mineral-gold: #FFD740;
-    --mineral-terracotta: #E1B07E;
-  }
-  @media (prefers-color-scheme: light) {
-    :root:not([data-theme]) {
-      --color-accent: #5D4037;
-      --bg-base: #F3F3F1;
-      --bg-surface: #EEEEEC;
-      --bg-raised: #D6D5D1;
-      --border: #E7E5E0;
-      --text-primary: #1A1918;
-      --text-secondary: #55514B;
-
-      --status-done: #166B3A;
-      --status-done-bg: #E4F3E9;
-      --status-action: #8A5A00;
-      --status-action-bg: #FBEFD8;
-      --status-blocked: #B3261E;
-      --status-blocked-bg: #FBE4E2;
-
-      --mineral-cobalt: #0047AB;
-      --mineral-tanzanite: #4B0082;
-      --mineral-malachite: #004D40;
-      --mineral-gold: #5D4037;
-      --mineral-terracotta: #A0522D;
-    }
-  }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg-base); color: var(--text-primary); font: 16px/1.6 var(--font-sans); }
-  main { max-width: var(--content-width); margin: 0 auto; padding: 4rem 1.5rem 5rem; }
-  .badge {
-    display: inline-flex; align-items: center; gap: .5rem;
-    padding: .3rem .75rem; border: 1px solid var(--border); border-radius: var(--radius-full);
-    font-size: .75rem; color: var(--text-secondary); margin-bottom: 2rem;
-  }
-  .badge .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-accent); }
-  h1 {
-    font-family: var(--font-display); font-weight: 700;
-    text-transform: uppercase; letter-spacing: .01em;
-    /* 2rem floor, not 2.75rem: at a 360-400px phone width, bold uppercase
-       serif at 44px+ forces "TALK TO YOUR" onto a line that barely fits
-       (or doesn't), reading as an oversized, blocky wall of text rather
-       than a headline. */
-    font-size: clamp(2rem, 7vw + 0.5rem, 5.5rem);
-    line-height: .95; margin: 0 0 1rem;
-  }
-  h1 span { color: var(--color-accent); }
-  p.lede { color: var(--text-secondary); font-size: 1.125rem; max-width: 60ch; margin: 0 0 2.5rem; }
-  h2 { font-family: var(--font-serif); font-weight: 600; font-size: 1.5rem; margin: 3rem 0 1rem; }
-  .card {
-    background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
-    padding: 1.5rem; margin: 1.5rem 0;
-    /* A wide table (e.g. index.astro's "Available tools") can't shrink below
-       its longest unbreakable <code> token — let it scroll within the card
-       on narrow viewports rather than forcing the whole page to scroll
-       horizontally. */
-    overflow-x: auto;
-  }
-  code, .mono { font: 0.9em/1.5 var(--font-mono); }
-  .endpoint {
-    display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;
-    background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
-    padding: 1rem 1.25rem; margin-bottom: 2.5rem;
-  }
-  .endpoint code { color: var(--color-accent); font-size: .95rem; }
-  ul.features { list-style: none; margin: 0; padding: 0; display: grid; gap: .9rem; }
-  ul.features li { padding-left: 1.4rem; position: relative; }
-  ul.features li::before { content: "→"; position: absolute; left: 0; color: var(--color-accent); }
-  ul.features b { color: var(--text-primary); }
-  table { width: 100%; border-collapse: collapse; font-size: .88rem; }
-  th, td { text-align: left; padding: .6rem .75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
-  th { color: var(--text-secondary); font-weight: 500; width: 9rem; }
-  td code { color: var(--color-accent); }
-  /* Underlined by default: a link in running prose distinguishable only by
-     color fails WCAG's link-in-text-block (axe catches this) — text-only
-     UI links (nav, breadcrumbs, the brand wordmark) override this below,
-     since those aren't sitting inline in a block of text. */
-  a { color: var(--color-accent); text-decoration: underline; text-underline-offset: .15em; }
-  footer a { color: var(--text-secondary); }
-  nav a { text-decoration: none; }
-
-  .site-header {
-    display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
-    max-width: var(--content-width); margin: 0 auto; padding: 1.5rem 1.5rem 0;
-  }
-  .site-header .brand {
-    display: flex; align-items: center; gap: .6rem; flex-shrink: 0; white-space: nowrap;
-    font-family: var(--font-serif); font-weight: 600; font-size: 1rem;
-    color: var(--text-primary); text-decoration: none;
-  }
-  .site-header .brand img { width: 26px; height: 26px; border-radius: 7px; display: block; }
-  .site-header nav {
-    display: flex; align-items: center; flex-wrap: wrap;
-    gap: 1.5rem; row-gap: .5rem; font-size: .88rem;
-  }
-  .site-header nav a { color: var(--text-secondary); }
-  .site-header nav a:hover { color: var(--text-primary); }
-  .site-header nav a[aria-label="GitHub repository"] { display: flex; align-items: center; }
-  @media (max-width: 480px) {
-    /* Without flex-wrap above, the brand text and all 5 nav items were
-       forced onto one un-wrapping line, squeezing "Nyuchi MCP for YNAB"
-       into wrapping mid-phrase instead. Wrapping the header is the real
-       fix; this just tightens spacing once nav drops to its own line. */
-    .site-header nav { gap: 1rem; font-size: .82rem; }
-  }
-
-  /* Full-bleed brand accent (Mzizi's MineralStrip pattern: 5 of the 7
-     ecosystem mineral colors as equal flex segments) sitting right above
-     the footer content — a hard-stop gradient stands in for 5 child
-     elements. Decorative only (aria-hidden on the element below). */
-  .mineral-strip {
-    height: 4px; width: 100%;
-    background: linear-gradient(to right,
-      var(--mineral-cobalt) 0 20%,
-      var(--mineral-tanzanite) 20% 40%,
-      var(--mineral-malachite) 40% 60%,
-      var(--mineral-gold) 60% 80%,
-      var(--mineral-terracotta) 80% 100%);
-  }
-
-  .site-footer {
-    max-width: var(--content-width); margin: 0 auto; padding: 1.75rem 1.5rem 3rem;
-    display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
-    font-size: .82rem; color: var(--text-secondary);
-  }
-  .site-footer nav { display: flex; gap: 1.25rem; }
-  .site-footer nav a { color: var(--text-secondary); }
-  .site-footer nav a:hover { color: var(--text-primary); }
-
+  /* Skip link: off-screen until focused. Its focused position (8px, not
+     0) and z-index clear the fixed left-edge MineralStrip (6px wide,
+     z-50) below instead of sitting half-behind it. */
   .skip-link {
-    position: absolute; left: -999px; top: 0; z-index: 10;
-    background: var(--color-accent); color: var(--bg-base);
+    position: absolute; left: -999px; top: 0; z-index: 60;
+    background: var(--primary); color: var(--primary-foreground);
     padding: .6rem 1rem; border-radius: 0 0 8px 0;
     font-family: var(--font-mono); font-size: .82rem; text-decoration: none;
   }
-  .skip-link:focus { left: 0; }
+  .skip-link:focus { left: 8px; }
 </style>
 </head>
-<body>
+<body class="bg-canvas text-foreground font-sans antialiased">
 <a class="skip-link" href="#main">Skip to content</a>
-<header class="site-header">
-  <a class="brand" href="/">
+<MineralStrip />
+<header class="content-width mx-auto flex flex-wrap items-center justify-between gap-4 px-6 pt-6">
+  <a class="flex flex-shrink-0 items-center gap-2 whitespace-nowrap font-serif text-base font-semibold text-foreground" href="/">
     <picture>
       <source srcset="/icon-light.png" media="(prefers-color-scheme: light)">
-      <img src="/icon-dark.png" alt="" width="26" height="26">
+      <img src="/icon-dark.png" alt="" width="26" height="26" class="block rounded-md">
     </picture>
     Nyuchi MCP for YNAB
   </a>
-  <nav aria-label="Primary">
-    <a href="/project">Project</a>
-    <a href="/status">Status</a>
-    <a href="/privacy-policy">Privacy</a>
-    <a href="https://nyuchi.com" target="_blank" rel="noopener">nyuchi.com</a>
-    <a href="https://github.com/bryanfawcett/mcp-ynab" target="_blank" rel="noopener" aria-label="GitHub repository" title="GitHub">
-      <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38
-          0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13
-          -.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07
-          -1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82
-          a7.6 7.6 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12
-          .51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48
-          0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/>
-      </svg>
-    </a>
+  <nav aria-label="Primary" class="flex flex-wrap items-center gap-4 sm:gap-6 text-sm">
+    <a class="text-muted-foreground hover:text-foreground transition-colors" href="/project">Project</a>
+    <a class="text-muted-foreground hover:text-foreground transition-colors" href="/status">Status</a>
+    <a class="text-muted-foreground hover:text-foreground transition-colors" href="/privacy-policy">Privacy</a>
+    <a class="text-muted-foreground hover:text-foreground transition-colors" href="https://nyuchi.com" target="_blank" rel="noopener">nyuchi.com</a>
+    <SocialIcon url="https://github.com/bryanfawcett/mcp-ynab" label="GitHub repository" />
   </nav>
 </header>
-<main id="main">
+<main id="main" class="content-width mx-auto px-6 pb-20 pt-16">
   <slot />
 </main>
-<div class="mineral-strip" aria-hidden="true"></div>
-<footer class="site-footer">
+<footer class="content-width mx-auto flex flex-wrap items-center justify-between gap-4 px-6 pb-12 pt-7 text-sm text-muted-foreground">
   <span>&copy; 2026 Nyuchi Africa. Part of the Bundu Foundation. Independent, unofficial — not affiliated with or endorsed by YNAB.</span>
-  <nav aria-label="Footer">
-    <a href="https://github.com/bryanfawcett/mcp-ynab" target="_blank" rel="noopener">GitHub</a>
-    <a href="/project">Project</a>
-    <a href="/status">Status</a>
-    <a href="/privacy-policy">Privacy Policy</a>
+  <nav aria-label="Footer" class="flex gap-5">
+    <a class="hover:text-foreground transition-colors" href="https://github.com/bryanfawcett/mcp-ynab" target="_blank" rel="noopener">GitHub</a>
+    <a class="hover:text-foreground transition-colors" href="/project">Project</a>
+    <a class="hover:text-foreground transition-colors" href="/status">Status</a>
+    <a class="hover:text-foreground transition-colors" href="/privacy-policy">Privacy Policy</a>
   </nav>
 </footer>
 <script>
