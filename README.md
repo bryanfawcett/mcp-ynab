@@ -123,7 +123,13 @@ token](https://app.ynab.com/settings/developer), used only for their own
 requests. `src/server/http.py` keeps every caller's YNAB client, response
 cache, and delta-sync state (a separate SQLite file per caller, under the
 same cache directory) completely separate — nobody using a multi-tenant
-deployment can see anyone else's budget, including yours.
+deployment can see anyone else's budget, including yours. On top of that,
+`worker/src/index.ts` routes each caller to their own container instance in
+this mode (keyed by a hash of their token), so tenants also get independent
+CPU/memory and each container sleeps on its own idle timer instead of
+sharing one — one busy tenant can't keep another tenant's container running
+(`containers[0].max_instances` in `wrangler.jsonc` caps how many can be
+alive at once; raise it if you expect more concurrent users).
 
 **Before your first deploy**, edit `worker/wrangler.jsonc` for your own setup:
 
