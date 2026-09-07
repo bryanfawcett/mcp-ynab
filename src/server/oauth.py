@@ -142,6 +142,11 @@ class OAuthProxy:
             "response_type": "code",
             "state": session_id,
         }
+        # YNAB's own /oauth/authorize has no "read-write" scope value to pass
+        # through -- full access is what you get by omitting `scope`
+        # entirely. "read-write" is this proxy's own name for that default,
+        # advertised in scopes_supported below so a client actually has both
+        # options to choose from instead of only ever seeing "read-only".
         if scope == "read-only":
             ynab_params["scope"] = "read-only"
         return RedirectResponse(f"{YNAB_AUTHORIZE_URL}?{urlencode(ynab_params)}", status_code=302)
@@ -337,7 +342,7 @@ class OAuthProxy:
                 "grant_types_supported": ["authorization_code", "refresh_token"],
                 "code_challenge_methods_supported": ["S256"],
                 "token_endpoint_auth_methods_supported": ["none"],
-                "scopes_supported": ["read-only"],
+                "scopes_supported": ["read-write", "read-only"],
             }
         )
 

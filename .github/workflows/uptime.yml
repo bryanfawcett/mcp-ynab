@@ -2,9 +2,17 @@ name: Uptime check
 
 # Upptime-style: no third-party monitoring account, no self-hosted cron
 # infra — just this workflow pinging each target on a schedule and
-# committing the result to data/uptime/*.json. worker/site's /status page
-# fetches those files straight from GitHub's raw content CDN at runtime, so
-# these commits never need to trigger a site rebuild/redeploy.
+# recording the result to data/uptime/*.json on a dedicated `data` branch.
+# worker/site's /status page fetches those files straight from GitHub's raw
+# content CDN at runtime, so these commits never need to trigger a site
+# rebuild/redeploy.
+#
+# `data`, not `main`: main's branch protection (PR required, 5 required
+# status checks, verified signatures) can't be satisfied by a plain `git
+# push` every 10 minutes. `data` carries no history of its own — each run
+# restores the previous branch content first (so each JSON file's rolling
+# window survives), reruns the checks, and force-pushes one fresh commit
+# with just the updated data/uptime/ directory.
 #
 # Deliberately outside worker/ (this repo's Workers Builds root directory)
 # so these frequent, code-free commits don't land inside its watched paths
@@ -30,11 +38,25 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+      - name: Restore previous uptime history from the data branch
+        run: |
+          if git ls-remote --exit-code --heads origin data >/dev/null; then
+            git fetch --depth=1 origin data
+            git archive origin/data data/uptime | tar -x
+          fi
       - run: python scripts/uptime_check.py
-      - run: |
+      - name: Push updated data to the data branch
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          workdir=$(mktemp -d)
+          cp -r data "$workdir/data"
+          cd "$workdir"
+          git init -q -b data
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/uptime
-          git diff --cached --quiet && exit 0
-          git commit -m "Record uptime check [skip ci]"
-          git push
+          git add data
+          git commit -q -m "Record uptime check [skip ci]"
+          git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push -q -f origin data:data

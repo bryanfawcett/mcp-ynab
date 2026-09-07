@@ -85,7 +85,7 @@ const TARGETS = [
       const barsEl = card.querySelector(".uptime-bars");
       const pctEl = card.querySelector(".uptime-pct");
       try {
-        const res = await fetch(`https://raw.githubusercontent.com/${REPO}/main/data/uptime/${key}.json`, { cache: "no-store" });
+        const res = await fetch(`https://raw.githubusercontent.com/${REPO}/data/data/uptime/${key}.json`, { cache: "no-store" });
         if (!res.ok) throw new Error(String(res.status));
         const history = await res.json();
         if (!Array.isArray(history) || history.length === 0) throw new Error("empty");

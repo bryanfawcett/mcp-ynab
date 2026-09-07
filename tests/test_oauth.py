@@ -162,6 +162,75 @@ async def test_full_authorization_code_flow():
     await kv.close()
 
 
+def test_metadata_advertises_both_read_write_and_read_only_scopes():
+    # Regression test: scopes_supported previously listed only "read-only",
+    # so a spec-compliant client had no way to offer a caller full access --
+    # every consent screen built from this document could only ever show
+    # "read-only", with no write option to select even though the proxy
+    # itself already supports granting full access (see authorize() below).
+    proxy, _ = _make_proxy()
+    app = Starlette(routes=proxy.routes())
+    client = TestClient(app)
+
+    resp = client.get("/.well-known/oauth-authorization-server")
+    assert resp.status_code == 200
+    assert set(resp.json()["scopes_supported"]) == {"read-write", "read-only"}
+
+
+@pytest.mark.asyncio
+async def test_authorize_requests_read_only_scope_from_ynab_when_asked():
+    proxy, _ = _make_proxy()
+    app = Starlette(routes=proxy.routes())
+    client = TestClient(app)
+
+    reg = client.post("/oauth/register", json={"redirect_uris": ["https://client.example/cb"]})
+    client_id = reg.json()["client_id"]
+    _, challenge = _pkce_pair()
+
+    resp = client.get(
+        "/oauth/authorize",
+        params={
+            "client_id": client_id,
+            "redirect_uri": "https://client.example/cb",
+            "code_challenge": challenge,
+            "code_challenge_method": "S256",
+            "scope": "read-only",
+        },
+        follow_redirects=False,
+    )
+    ynab_redirect = httpx.URL(resp.headers["location"])
+    assert ynab_redirect.params["scope"] == "read-only"
+
+
+@pytest.mark.asyncio
+async def test_authorize_requests_full_access_from_ynab_by_default():
+    # No scope, or "read-write" -- either way, YNAB gets no `scope` param at
+    # all, which is how its own /oauth/authorize grants full read-write
+    # access (it has no explicit "read-write" scope value of its own).
+    proxy, _ = _make_proxy()
+    app = Starlette(routes=proxy.routes())
+    client = TestClient(app)
+
+    for scope_param in ({}, {"scope": "read-write"}):
+        reg = client.post("/oauth/register", json={"redirect_uris": ["https://client.example/cb"]})
+        client_id = reg.json()["client_id"]
+        _, challenge = _pkce_pair()
+
+        resp = client.get(
+            "/oauth/authorize",
+            params={
+                "client_id": client_id,
+                "redirect_uri": "https://client.example/cb",
+                "code_challenge": challenge,
+                "code_challenge_method": "S256",
+                **scope_param,
+            },
+            follow_redirects=False,
+        )
+        ynab_redirect = httpx.URL(resp.headers["location"])
+        assert "scope" not in ynab_redirect.params
+
+
 @pytest.mark.asyncio
 async def test_authorize_rejects_unknown_client():
     proxy, _ = _make_proxy()
