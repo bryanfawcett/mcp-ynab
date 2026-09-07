@@ -1,6 +1,7 @@
 import base64
 import hashlib
 import json
+from unittest.mock import AsyncMock
 
 import httpx
 import pytest
@@ -31,6 +32,35 @@ class FakeKVStore:
         pass
 
 
+class LaggingKVStore(FakeKVStore):
+    """Simulates Cloudflare KV's eventual consistency (see oauth_kv.py's
+    docstring and KV_READ_RETRY_ATTEMPTS in oauth.py): a key written via
+    put_json returns None from get_json for `misses_before_visible` reads
+    before it actually becomes visible, exactly like a read hitting an
+    edge location the write hasn't propagated to yet."""
+
+    def __init__(self, misses_before_visible: int) -> None:
+        super().__init__()
+        self._misses_before_visible = misses_before_visible
+        self._miss_counts: dict[str, int] = {}
+
+    async def get_json(self, key: str):
+        if key in self._data and self._miss_counts.get(key, 0) < self._misses_before_visible:
+            self._miss_counts[key] = self._miss_counts.get(key, 0) + 1
+            return None
+        return await super().get_json(key)
+
+
+@pytest.fixture(autouse=True)
+def _fast_kv_retries(monkeypatch):
+    """OAuthProxy retries a KV miss with real sleeps (KV_READ_RETRY_* in
+    oauth.py) to ride out Cloudflare KV's eventual-consistency window in
+    production. Tests -- including ones exercising a genuine miss, like an
+    unknown client or an already-used code -- shouldn't have to actually
+    wait through that backoff."""
+    monkeypatch.setattr("src.server.oauth.asyncio.sleep", AsyncMock())
+
+
 def _pkce_pair():
     verifier = "a" * 64
     challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).rstrip(b"=").decode()
@@ -50,7 +80,7 @@ def _ynab_transport(access_token="ynab-at-1", refresh_token="ynab-rt-1"):
     return httpx.MockTransport(handler)
 
 
-def _make_proxy(transport=None) -> tuple[OAuthProxy, FakeKVStore]:
+def _make_proxy(transport=None, kv=None) -> tuple[OAuthProxy, FakeKVStore]:
     settings = Settings(
         MCP_MULTI_TENANT=True,
         YNAB_OAUTH_CLIENT_ID="test-client",
@@ -59,7 +89,7 @@ def _make_proxy(transport=None) -> tuple[OAuthProxy, FakeKVStore]:
         CLOUDFLARE_KV_NAMESPACE_ID="ns",
         CLOUDFLARE_KV_API_TOKEN="tok",
     )
-    kv = FakeKVStore()
+    kv = kv if kv is not None else FakeKVStore()
     http_client = httpx.AsyncClient(transport=transport or _ynab_transport())
     return OAuthProxy(settings, kv, http_client=http_client), kv
 
@@ -229,6 +259,91 @@ async def test_authorize_requests_full_access_from_ynab_by_default():
         )
         ynab_redirect = httpx.URL(resp.headers["location"])
         assert "scope" not in ynab_redirect.params
+
+
+@pytest.mark.asyncio
+async def test_ynab_callback_retries_through_kv_propagation_lag():
+    # Regression test for the "expired or unknown authorization session"
+    # error a real user hit: authorize() writes the session to Cloudflare
+    # KV, then redirects through YNAB and back to ynab_callback() -- a round
+    # trip that can complete before the write has propagated to whatever KV
+    # edge location serves the callback's read. The session is really
+    # there; it just isn't visible yet. A couple of misses should still
+    # succeed via the retry.
+    proxy, _ = _make_proxy(kv=LaggingKVStore(misses_before_visible=3))
+    app = Starlette(routes=proxy.routes())
+    client = TestClient(app)
+
+    reg = client.post("/oauth/register", json={"redirect_uris": ["https://client.example/cb"]})
+    client_id = reg.json()["client_id"]
+    _, challenge = _pkce_pair()
+
+    resp = client.get(
+        "/oauth/authorize",
+        params={
+            "client_id": client_id,
+            "redirect_uri": "https://client.example/cb",
+            "code_challenge": challenge,
+            "code_challenge_method": "S256",
+        },
+        follow_redirects=False,
+    )
+    session_id = httpx.URL(resp.headers["location"]).params["state"]
+
+    resp = client.get("/oauth/ynab/callback", params={"code": "ynab-code-1", "state": session_id}, follow_redirects=False)
+    assert resp.status_code == 302
+    assert "code" in httpx.URL(resp.headers["location"]).params
+
+
+@pytest.mark.asyncio
+async def test_ynab_callback_reports_expired_session_when_genuinely_missing():
+    proxy, _ = _make_proxy()
+    app = Starlette(routes=proxy.routes())
+    client = TestClient(app)
+
+    resp = client.get("/oauth/ynab/callback", params={"code": "ynab-code-1", "state": "nonexistent-session"})
+    assert resp.status_code == 400
+    assert resp.json()["error_description"] == "expired or unknown authorization session"
+
+
+@pytest.mark.asyncio
+async def test_token_exchange_retries_through_kv_propagation_lag():
+    # Same lag, one hop later: ynab_callback() writes the code, and an MCP
+    # client can call /oauth/token to exchange it before that write has
+    # propagated.
+    proxy, _ = _make_proxy(kv=LaggingKVStore(misses_before_visible=3))
+    app = Starlette(routes=proxy.routes())
+    client = TestClient(app)
+
+    reg = client.post("/oauth/register", json={"redirect_uris": ["https://client.example/cb"]})
+    client_id = reg.json()["client_id"]
+    verifier, challenge = _pkce_pair()
+
+    resp = client.get(
+        "/oauth/authorize",
+        params={
+            "client_id": client_id,
+            "redirect_uri": "https://client.example/cb",
+            "code_challenge": challenge,
+            "code_challenge_method": "S256",
+        },
+        follow_redirects=False,
+    )
+    session_id = httpx.URL(resp.headers["location"]).params["state"]
+    resp = client.get("/oauth/ynab/callback", params={"code": "ynab-code-1", "state": session_id}, follow_redirects=False)
+    our_code = httpx.URL(resp.headers["location"]).params["code"]
+
+    resp = client.post(
+        "/oauth/token",
+        data={
+            "grant_type": "authorization_code",
+            "code": our_code,
+            "redirect_uri": "https://client.example/cb",
+            "code_verifier": verifier,
+        },
+    )
+    assert resp.status_code == 200
+    assert resp.json()["token_type"] == "bearer"
 
 
 @pytest.mark.asyncio

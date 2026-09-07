@@ -30,6 +30,7 @@ is opaque and random (`secrets.token_urlsafe`) -- never the underlying YNAB
 token, which stays in KV and is only ever sent to YNAB itself.
 """
 
+import asyncio
 import base64
 import hashlib
 import secrets
@@ -55,6 +56,17 @@ YNAB_TOKEN_URL = "https://app.ynab.com/oauth/token"
 ACCESS_TOKEN_TTL = 3600
 AUTHORIZE_SESSION_TTL = 600  # time allowed to complete the YNAB redirect dance
 AUTH_CODE_TTL = 120  # single-use, short-lived by design
+
+# Cloudflare KV (reached over its REST API -- see oauth_kv.py) is only
+# eventually consistent: a write can take a moment to propagate to whatever
+# location serves a subsequent read. The authorize()->ynab_callback() and
+# ynab_callback()->/oauth/token round trips can both complete faster than
+# that propagation, so a read immediately after a write can come back empty
+# even though the write already succeeded. These bound a short retry for
+# exactly that window -- well under AUTHORIZE_SESSION_TTL/AUTH_CODE_TTL, so
+# a genuinely missing/expired key still reports as such, just not falsely.
+KV_READ_RETRY_ATTEMPTS = 5
+KV_READ_RETRY_INITIAL_DELAY = 0.25
 
 
 def _opaque(prefix: str) -> str:
@@ -82,6 +94,20 @@ class OAuthProxy:
     def callback_url(self) -> str:
         return f"{self._settings.oauth_issuer_url}/oauth/ynab/callback"
 
+    async def _get_json_tolerating_kv_lag(self, key: str) -> dict[str, Any] | None:
+        """Like `self._kv.get_json`, but retries a miss a few times with a
+        short backoff before giving up -- see KV_READ_RETRY_ATTEMPTS above
+        for why."""
+        delay = KV_READ_RETRY_INITIAL_DELAY
+        for attempt in range(KV_READ_RETRY_ATTEMPTS):
+            value = await self._kv.get_json(key)
+            if value is not None:
+                return value
+            if attempt < KV_READ_RETRY_ATTEMPTS - 1:
+                await asyncio.sleep(delay)
+                delay *= 2
+        return None
+
     # -- Dynamic client registration (RFC 7591) --------------------------
 
     async def register_client(self, request: Request) -> Response:
@@ -104,7 +130,10 @@ class OAuthProxy:
         return JSONResponse({**record, "client_id_issued_at": int(record["created_at"])}, status_code=201)
 
     async def _get_client(self, client_id: str) -> dict[str, Any] | None:
-        return await self._kv.get_json(f"oauth:client:{client_id}")
+        # A client that just went through dynamic registration (RFC 7591)
+        # can call /oauth/authorize immediately after -- same KV propagation
+        # race as the session/code lookups below.
+        return await self._get_json_tolerating_kv_lag(f"oauth:client:{client_id}")
 
     # -- /oauth/authorize: start the dance, redirect to YNAB --------------
 
@@ -160,7 +189,7 @@ class OAuthProxy:
         if error := params.get("error"):
             return JSONResponse({"error": error, "error_description": params.get("error_description")}, status_code=400)
 
-        session = await self._kv.get_json(f"oauth:session:{session_id}")
+        session = await self._get_json_tolerating_kv_lag(f"oauth:session:{session_id}")
         if not session or not ynab_code:
             return JSONResponse({"error": "invalid_request", "error_description": "expired or unknown authorization session"}, status_code=400)
 
@@ -215,7 +244,7 @@ class OAuthProxy:
 
     async def _exchange_code(self, form: Any) -> Response:
         code = str(form.get("code", ""))
-        record = await self._kv.get_json(f"oauth:code:{code}")
+        record = await self._get_json_tolerating_kv_lag(f"oauth:code:{code}")
         if not record:
             return JSONResponse({"error": "invalid_grant", "error_description": "unknown or expired code"}, status_code=400)
         # Single-use: delete immediately, before any other validation, so a
