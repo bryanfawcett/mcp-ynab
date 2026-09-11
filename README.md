@@ -54,20 +54,20 @@ See [mcp-ynab.com](https://mcp-ynab.com) for config file locations and troublesh
 
 ## Available Tools
 
-| Group | Tools |
-|-------|-------|
-| **User** | `get_user` |
-| **Plans** | `list_plans`, `get_plan`, `get_plan_settings` |
-| **Accounts** | `list_accounts`, `get_account`, `create_account` |
-| **Categories** | `list_categories`, `get_category`, `create_category`, `update_category`, `create_category_group`, `update_category_group`, `get_category_for_month`, `update_category_for_month` |
-| **Payees** | `list_payees`, `create_payee`, `get_payee`, `update_payee` |
-| **Payee Locations** | `list_payee_locations`, `get_payee_location`, `get_payee_locations_by_payee` |
-| **Months** | `list_months`, `get_month` |
-| **Money Movements** | `list_money_movements`, `get_money_movements_for_month`, `list_money_movement_groups`, `get_money_movement_groups_for_month` |
-| **Transactions** | `list_transactions`, `get_transaction`, `get_transactions_by_account`, `get_transactions_by_category`, `get_transactions_by_month`, `get_transactions_by_payee`, `search_transactions`, `create_transaction`, `create_transactions`, `update_transaction`, `update_transactions`, `delete_transaction`, `import_transactions` |
-| **Scheduled** | `list_scheduled_transactions`, `get_scheduled_transaction`, `create_scheduled_transaction`, `update_scheduled_transaction`, `delete_scheduled_transaction` |
-| **Analytics** | `get_money_flow`, `get_spending_by_category`, `get_monthly_report` |
-| **Reconciliation** | `export_transactions_csv`, `reconcile_account` |
+| Group               | Tools                                                                                                                                                                                                                                                                                                                         |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **User**            | `get_user`                                                                                                                                                                                                                                                                                                                    |
+| **Plans**           | `list_plans`, `get_plan`, `get_plan_settings`                                                                                                                                                                                                                                                                                 |
+| **Accounts**        | `list_accounts`, `get_account`, `create_account`                                                                                                                                                                                                                                                                              |
+| **Categories**      | `list_categories`, `get_category`, `create_category`, `update_category`, `create_category_group`, `update_category_group`, `get_category_for_month`, `update_category_for_month`                                                                                                                                              |
+| **Payees**          | `list_payees`, `create_payee`, `get_payee`, `update_payee`                                                                                                                                                                                                                                                                    |
+| **Payee Locations** | `list_payee_locations`, `get_payee_location`, `get_payee_locations_by_payee`                                                                                                                                                                                                                                                  |
+| **Months**          | `list_months`, `get_month`                                                                                                                                                                                                                                                                                                    |
+| **Money Movements** | `list_money_movements`, `get_money_movements_for_month`, `list_money_movement_groups`, `get_money_movement_groups_for_month`                                                                                                                                                                                                  |
+| **Transactions**    | `list_transactions`, `get_transaction`, `get_transactions_by_account`, `get_transactions_by_category`, `get_transactions_by_month`, `get_transactions_by_payee`, `search_transactions`, `create_transaction`, `create_transactions`, `update_transaction`, `update_transactions`, `delete_transaction`, `import_transactions` |
+| **Scheduled**       | `list_scheduled_transactions`, `get_scheduled_transaction`, `create_scheduled_transaction`, `update_scheduled_transaction`, `delete_scheduled_transaction`                                                                                                                                                                    |
+| **Analytics**       | `get_money_flow`, `get_spending_by_category`, `get_monthly_report`                                                                                                                                                                                                                                                            |
+| **Reconciliation**  | `export_transactions_csv`, `reconcile_account`                                                                                                                                                                                                                                                                                |
 
 ### Field selection
 
@@ -111,14 +111,14 @@ git-integration requires the Wrangler config and Dockerfile to share a root
 directory, and this keeps both deploy paths below working from the same
 layout.)
 
-**Single-tenant vs. multi-tenant:** by default this deploys as a *single-tenant*
+**Single-tenant vs. multi-tenant:** by default this deploys as a _single-tenant_
 server — one `YNAB_API_KEY` secret for the whole deployment, gated by a
 separate `MCP_AUTH_TOKEN` shared secret. That's the right choice for a
 private instance you're deploying just for yourself. If you want other
 people to be able to use your deployment too — each with their own YNAB
 budget, not yours — set `MCP_MULTI_TENANT=true` instead (see step 1 below):
 there's then no `YNAB_API_KEY`/`MCP_AUTH_TOKEN` at all, and each caller's
-bearer token/`?token=` value *is* their own [YNAB personal access
+bearer token/`?token=` value _is_ their own [YNAB personal access
 token](https://app.ynab.com/settings/developer), used only for their own
 requests. `src/server/http.py` keeps every caller's YNAB client, response
 cache, and delta-sync state (a separate SQLite file per caller, under the
@@ -152,10 +152,13 @@ alive at once; raise it if you expect more concurrent users).
    - **Single-tenant:** generate a long random token for `MCP_AUTH_TOKEN` —
      it's the only thing gating access to your YNAB data once the endpoint
      is public, e.g.:
+
      ```bash
      openssl rand -hex 32
      ```
+
      You'll set this and `YNAB_API_KEY` as secrets below.
+
    - **Multi-tenant:** nothing to generate — you'll set `MCP_MULTI_TENANT=true`
      as a secret below instead of `YNAB_API_KEY`/`MCP_AUTH_TOKEN`, and each
      caller brings their own YNAB token.
@@ -172,7 +175,7 @@ alive at once; raise it if you expect more concurrent users).
      them in source control means every deploy path carries them
      automatically instead of risking loss the way a versioned secret can
      when different deploy paths (a plain deploy, a gradual `versions
-     upload`/`deploy`, Workers Builds) clone from different version
+upload`/`deploy`, Workers Builds) clone from different version
      lineages. Set `YNAB_OAUTH_CLIENT_SECRET` and `CLOUDFLARE_KV_API_TOKEN`
      (a token scoped to Workers KV Storage:Edit only — not your Cloudflare
      account token) as secrets below — those two are real credentials.
@@ -183,6 +186,7 @@ alive at once; raise it if you expect more concurrent users).
    locally or Cloudflare's own build environment — pick one:
 
    **Option A — deploy from your machine:**
+
    ```bash
    cd worker
    npm install
@@ -193,6 +197,7 @@ alive at once; raise it if you expect more concurrent users).
    npx wrangler secret put CLOUDFLARE_KV_API_TOKEN   # OAuth only
    npm run deploy
    ```
+
    (Secrets aren't read from `wrangler.jsonc` — see the [Container secrets guide](https://developers.cloudflare.com/containers/examples/env-vars-and-secrets/).
    For OAuth, also edit `YNAB_OAUTH_CLIENT_ID` and `CLOUDFLARE_ACCOUNT_ID` into
    `wrangler.jsonc`'s `vars` directly — see the note above on why those two
@@ -214,8 +219,8 @@ alive at once; raise it if you expect more concurrent users).
       deploy command below would upload an empty (or stale) assets directory.
       Leave **Deploy command** as the default `npx wrangler deploy`.
    4. Set **Production branch** to `main` under **Settings → Builds**. Without
-      this, Workers Builds deploys to *production* off of every push to
-      *every* branch — including work-in-progress PR branches — rather than
+      this, Workers Builds deploys to _production_ off of every push to
+      _every_ branch — including work-in-progress PR branches — rather than
       only after a merge to `main`. Leave **Builds for non-production
       branches** unchecked: its "Version command" runs from the repo root
       regardless of the Root directory setting above, so on this repo's
@@ -232,12 +237,13 @@ alive at once; raise it if you expect more concurrent users).
       with your fork rather than living only in the dashboard.
    6. Push to `main` to trigger the first build — it can take several minutes
       while Cloudflare provisions the container image.
-4. Connecting a client (**Settings → Connectors → Add custom connector** in
+
+3. Connecting a client (**Settings → Connectors → Add custom connector** in
    Claude web) — as of this writing, Claude.ai's custom connector UI only has
    fields for OAuth (Authorization/Token URL, Client ID/Secret), not a static
    header ([anthropics/claude-ai-mcp#112](https://github.com/anthropics/claude-ai-mcp/issues/112)),
    so the token travels as a `?token=` query parameter instead. `src/server/http.py`
-   accepts either form; if you're adding this to a client that *does* support
+   accepts either form; if you're adding this to a client that _does_ support
    custom headers (Claude Code, an MCP Inspector, etc.), prefer
    `Authorization: Bearer <token>` there.
    - **Single-tenant:** `https://<your-domain>/mcp?token=<MCP_AUTH_TOKEN>`
@@ -245,7 +251,7 @@ alive at once; raise it if you expect more concurrent users).
      — each person uses their own [YNAB personal access
      token](https://app.ynab.com/settings/developer) here, not a value you hand out.
    - **Multi-tenant + OAuth:** if the OAuth secrets above are set, a client
-     that *does* support OAuth (Claude.ai's connector UI, for one) can instead
+     that _does_ support OAuth (Claude.ai's connector UI, for one) can instead
      be pointed at the MCP endpoint with no token in the URL at all — it
      discovers `https://<your-domain>/.well-known/oauth-authorization-server`,
      registers itself, and walks the caller through "Sign in with YNAB"
