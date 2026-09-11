@@ -118,7 +118,7 @@ jobs:
             -e MCP_AUTH_TOKEN=test-dummy-token \
             ynab-mcp-ci
       - run: |
-          for i in $(seq 1 30); do
+          for _ in $(seq 1 30); do
             curl -sf http://localhost:8080/health && exit 0
             sleep 1
           done
