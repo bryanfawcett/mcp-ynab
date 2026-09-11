@@ -1,12 +1,53 @@
 # YNAB MCP Server
 
-An MCP server that connects AI assistants to your [YNAB](https://www.ynab.com/) budget. Ask your budget questions YNAB can't answer.
+> A Model Context Protocol server that connects AI assistants to a
+> [YNAB](https://www.ynab.com/) budget — 53 tools for asking your budget the
+> questions YNAB itself cannot answer.
 
-**[mcp-ynab.com](https://mcp-ynab.com)** — Full setup guide, troubleshooting, and more.
+[![CI](https://github.com/nyuchi/mcp-ynab/actions/workflows/ci.yml/badge.svg)](https://github.com/nyuchi/mcp-ynab/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/mcp-ynab?style=flat-square&logo=pypi&logoColor=white)](https://pypi.org/project/mcp-ynab/)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg?style=flat-square)](https://www.gnu.org/licenses/agpl-3.0)
+![Python](https://img.shields.io/badge/Python-3.13+-3776AB?style=flat-square&logo=python&logoColor=white)
+
+**PyPI:** [`mcp-ynab`](https://pypi.org/project/mcp-ynab/) | **Hosted:**
+`https://ynab.nyuchi.com/mcp` | **Docs:**
+[mcp-ynab.com](https://mcp-ynab.com)
+
+---
+
+## Two ways to run it
+
+**Locally over stdio** — the usual choice. Install from PyPI and point your
+client at it with your own YNAB personal access token:
+
+```bash
+uv tool run mcp-ynab
+```
+
+**Or use the hosted instance** at `https://ynab.nyuchi.com/mcp`, a Cloudflare
+Worker in front of a container running this same server. It speaks Streamable
+HTTP and brokers YNAB OAuth, so a client that supports remote MCP can be
+pointed at the bare URL and walked through "Sign in with YNAB":
+
+```console
+$ curl -s -D - -o /dev/null https://ynab.nyuchi.com/mcp
+HTTP/2 401
+www-authenticate: Bearer
+```
+
+**That `401` is correct, not a fault** — the endpoint is auth-gated, and a
+compliant client discovers the flow at
+`https://ynab.nyuchi.com/.well-known/oauth-authorization-server` (which returns
+`200`). A `404` or a DNS failure would mean it is down.
+
+Running it yourself is fully supported and documented under
+[Remote deployment](#remote-deployment-cloudflare-container--worker); note that
+`worker/wrangler.jsonc` is checked in with Nyuchi's own account id, KV
+namespace and custom domain, so a fork must edit those.
 
 ## Features
 
-- **50+ tools** — budgets, accounts, transactions, categories, payees, months, scheduled transactions, analytics, and reconciliation
+- **53 tools** — budgets, accounts, transactions, categories, payees, months, scheduled transactions, analytics, and reconciliation
 - **Delta sync** — only fetches what changed since the last call (uses YNAB's server knowledge)
 - **4-tier caching** — TTL cache, delta sync, retry with backoff, SQLite persistence
 - **Search & analytics** — text search across transactions, per-category spending breakdowns, Sankey flow data
@@ -264,6 +305,13 @@ one shared file — created lazily the first time each caller's token is seen,
 and bounded (oldest evicted) so a flood of distinct tokens can't grow it
 unbounded. See `CLAUDE.md` for the day-to-day commands.
 
-## License
+## Licence
 
-[AGPL-3.0](LICENSE)
+Licensed under the [GNU Affero General Public License v3.0](LICENSE)
+(`AGPL-3.0-only`), as declared in `pyproject.toml`.
+
+This repository is a fork of
+[pragprogrammer/mcp-ynab](https://github.com/pragprogrammer/mcp-ynab), extended
+by Nyuchi with a Streamable-HTTP transport, multi-tenancy, a YNAB OAuth broker,
+and the Cloudflare Container + Worker deployment at `ynab.nyuchi.com`. The AGPL
+carries forward to this fork and to the hosted instance.
